@@ -1,0 +1,14 @@
+body {
+    background-color: rgb(87, 87, 87);
+    position: relative;
+}
+
+canvas {
+    background: linear-gradient(rgb(113, 113, 226), rgb(150, 136, 136));
+    border: 2px solid rgb(58, 58, 58);
+    border-radius: 20px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    position: absolute;
+}

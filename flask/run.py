@@ -7,6 +7,7 @@ mimetypes.add_type('application/javascript', '.js')
 
 
 def main():
+    app.env = "development"
     app.run(debug=True, host="localhost", port=5000)
 
 

@@ -18,7 +18,7 @@ from flask import (
 
 
 KEYS_DIR = os.path.join("app", "keys")
-SONG_DIR = os.path.join("app", "songs")
+SONG_DIR = os.path.join("app", "static", "songs")
 
 
 def get_clt_id():
@@ -40,12 +40,13 @@ youtube_api = YoutubeAPI(
     YoutubeAppsBuilder(os.path.join(KEYS_DIR, "youtube.txt")), SONG_DIR
 )
 
+if os.path.isdir(SONG_DIR):
+    shutil.rmtree(SONG_DIR)
+
 
 @app.before_first_request
 def start():
     spotify_api.set_redirect_uri(url_for("save_login", _external=True))
-    if os.path.isdir(SONG_DIR):
-        shutil.rmtree(SONG_DIR)
 
 
 @app.route("/favicon.ico")
@@ -80,11 +81,3 @@ def visualizer():
     pytube_obj = youtube_api.search_song(track)
     youtube_api.download(pytube_obj, track.get_filename())
     return render_template("visualizer.html", filename=track.get_filename())
-
-
-def main():
-    app.run(debug=True, host="localhost", port=5000)
-
-
-if __name__ == '__main__':
-    main()

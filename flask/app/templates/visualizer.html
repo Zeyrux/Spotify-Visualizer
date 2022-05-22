@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Music Player :)</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='styles/style.css')}}">
 </head>
 <body>
-    <form action="/skip_song" method="get" target="_blank">
-        <input type="submit" value="{{filename}}">
-    </form>
-    <canvas>
-        
-    </canvas>
+    <canvas id="canvas"></canvas>
+    <audio id="audio" controls autoplay="true" src="{{url_for('static', filename='songs/')}}" style="position: absolute;"></audio>
+    <script src="{{url_for('static', filename='scritps/visualizer.js')}}" id="script" filename="{{filename}}"></script>
+    <script src="{{url_for('static', filename='scritps/controller.js')}}" id="script" filename="{{filename}}"></script>
 </body>
 </html>
