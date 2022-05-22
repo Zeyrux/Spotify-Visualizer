@@ -1,8 +1,10 @@
 import os
 import secrets
+import shutil
 
 from app.SpotifyAPI import SpotifyAPI, TokenManager
-# from SpotifyAPI import SpotifyAPI, TokenManager
+from app.YoutubeAPI import YoutubeAPI
+from app.YoutubeAppsBuilder import YoutubeAppsBuilder
 
 from flask import (
     Flask,
@@ -16,26 +18,34 @@ from flask import (
 
 
 KEYS_DIR = os.path.join("app", "keys")
-# KEYS_DIR = os.path.join("keys")
+SONG_DIR = os.path.join("app", "songs")
 
 
 def get_clt_id():
-    return open(os.path.join(KEYS_DIR, "clt_id.txt"), "r").read()
+    return open(os.path.join(KEYS_DIR, "spotify_clt_id.txt"), "r").read()
 
 
 def get_clt_secret():
-    return open(os.path.join(KEYS_DIR, "clt_secret.txt"), "r").read()
+    return open(os.path.join(KEYS_DIR, "spotify_clt_secret.txt"), "r").read()
 
+
+CLOSE_WINDOW = "<script>window.onload = window.close();</script>"
 
 app = Flask(__name__)
 app.secret_key = secrets.token_urlsafe(25)
 app.config['SESSION_TYPE'] = 'filesystem'
+
 spotify_api = SpotifyAPI(get_clt_id(), get_clt_secret())
+youtube_api = YoutubeAPI(
+    YoutubeAppsBuilder(os.path.join(KEYS_DIR, "youtube.txt")), SONG_DIR
+)
 
 
 @app.before_first_request
 def start():
     spotify_api.set_redirect_uri(url_for("save_login", _external=True))
+    if os.path.isdir(SONG_DIR):
+        shutil.rmtree(SONG_DIR)
 
 
 @app.route("/favicon.ico")
@@ -64,7 +74,12 @@ def visualizer():
     if not session.get("token_info", None):
         return redirect(url_for("homepage"))
     token_manager = TokenManager(session["token_info"], spotify_api)
-    return render_template("visualizer.html")
+    track = spotify_api.get_currently_playing_track(
+        token_manager.get_access_token(), token_manager.get_token_type()
+    )
+    pytube_obj = youtube_api.search_song(track)
+    youtube_api.download(pytube_obj, track.get_filename())
+    return render_template("visualizer.html", filename=track.get_filename())
 
 
 def main():
