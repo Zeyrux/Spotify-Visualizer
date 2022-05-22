@@ -7,7 +7,7 @@
 </head>
 <body>
     <canvas id="canvas"></canvas>
-    <audio id="audio" controls autoplay="true" src="{{url_for('static', filename='songs/')}}" style="position: absolute;"></audio>
+    <audio id="audio" loop controls autoplay src="{{url_for('static', filename='songs/')}}" style="position: absolute;"></audio>
     <script src="{{url_for('static', filename='scritps/visualizer.js')}}" id="script" filename="{{filename}}"></script>
     <script src="{{url_for('static', filename='scritps/controller.js')}}" id="script" filename="{{filename}}"></script>
 </body>
