@@ -1,10 +1,11 @@
 import os
 import secrets
-import shutil
+from pathlib import Path
 
 from app.SpotifyAPI import SpotifyAPI, TokenManager
 from app.YoutubeAPI import YoutubeAPI
 from app.YoutubeAppsBuilder import YoutubeAppsBuilder
+from app.MusicController import MusicController
 
 from flask import (
     Flask,
@@ -18,7 +19,7 @@ from flask import (
 
 
 KEYS_DIR = os.path.join("app", "keys")
-SONG_DIR = os.path.join("app", "static", "songs")
+DATABASE_DIR = os.path.join("app", "static", "database")
 
 
 def get_clt_id():
@@ -37,21 +38,21 @@ app.config['SESSION_TYPE'] = 'filesystem'
 
 spotify_api = SpotifyAPI(get_clt_id(), get_clt_secret())
 youtube_api = YoutubeAPI(
-    YoutubeAppsBuilder(os.path.join(KEYS_DIR, "youtube.txt")), SONG_DIR
+    YoutubeAppsBuilder(os.path.join(KEYS_DIR, "youtube.txt"))
 )
-
-if os.path.isdir(SONG_DIR):
-    shutil.rmtree(SONG_DIR)
+music_controller = MusicController(DATABASE_DIR)
 
 
-def download_cur_song(token_info) -> tuple["Track", "TokenManager"]:
+def download_cur_song(token_info) -> tuple["Track", "TokenManager", "str"]:
     token_manager = TokenManager(token_info, spotify_api)
     track = spotify_api.get_currently_playing_track(
         token_manager.get_access_token(), token_manager.get_token_type()
     )
     pytube_obj = youtube_api.search_song(track)
-    youtube_api.download(pytube_obj, track.get_filename())
-    return track, token_manager
+    download_dir = os.path.join(DATABASE_DIR, track.get_id())
+    youtube_api.download(pytube_obj, download_dir, track.get_filename())
+    return (track, token_manager,
+            os.path.join(download_dir, track.get_filename()))
 
 
 @app.before_first_request
@@ -89,5 +90,9 @@ def skip():
 def visualizer():
     if not session.get("token_info", None):
         return redirect(url_for("homepage"))
-    track, token_manager = download_cur_song(session["token_info"])
-    return render_template("visualizer.html", filename=track.get_filename())
+    track, token_manager, song_path = download_cur_song(
+        session["token_info"]
+    )
+    song_path = Path(song_path)
+    song_path = song_path.relative_to(*song_path.parts[:1])
+    return render_template("visualizer.html", file_path=song_path)

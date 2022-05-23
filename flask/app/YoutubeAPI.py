@@ -34,11 +34,8 @@ GET_BEST_SONGS_ARGS = [
 
 
 class YoutubeAPI:
-    def __init__(self, yt_apps: "YoutubeAppsBuilder", download_dir):
+    def __init__(self, yt_apps: "YoutubeAppsBuilder"):
         self.yt_apps = yt_apps
-        self.download_dir = Path(download_dir)
-        if not self.download_dir.is_dir():
-            self.download_dir.mkdir(parents=True, exist_ok=True)
 
     def _search_tracks_youtube(self, args) -> dict:
         for i in count():
@@ -92,5 +89,6 @@ class YoutubeAPI:
             if track_pyt is not None:
                 return track_pyt
 
-    def download(self, track: pytube.YouTube, filename):
-        track.streams.get_audio_only().download(self.download_dir, filename)
+    def download(self, track: pytube.YouTube, directory, filename):
+        Path(directory).mkdir(parents=True, exist_ok=True)
+        track.streams.get_audio_only().download(directory, filename)

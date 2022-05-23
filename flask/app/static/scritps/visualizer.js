@@ -1,6 +1,7 @@
-let filename = document.getElementById("script").getAttribute("filename");
+let file_path = document.getElementById("script").getAttribute("file_path");
 let canvas = document.getElementById("canvas");
-let songname = filename.replace(".aac");
+let songname = file_path.replace(".aac");
+let audio = document.getElementById("audio");
 
 let bar_width = 1;
 let frame_cnt = 0;
@@ -13,8 +14,6 @@ let delta
 
 
 function init() {
-    let audio = document.getElementById("audio");
-    audio.src += filename;
     audio.volume = 0.05;
     
     window.addEventListener("click", initMp3Player);
