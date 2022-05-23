@@ -43,20 +43,22 @@ youtube_api = YoutubeAPI(
 music_controller = MusicController(DATABASE_DIR)
 
 
-def download_cur_song(token_info) -> tuple["Track", "TokenManager", "str"]:
+def download_cur_song(token_info) -> tuple["Track", "TokenManager"]:
     token_manager = TokenManager(token_info, spotify_api)
+    # get cur track
     track = spotify_api.get_currently_playing_track(
         token_manager.get_access_token(), token_manager.get_token_type()
     )
+    # search for track
     pytube_obj = youtube_api.search_song(track)
-    download_dir = os.path.join(DATABASE_DIR, track.get_id())
-    youtube_api.download(pytube_obj, download_dir, track.get_filename())
-    return (track, token_manager,
-            os.path.join(download_dir, track.get_filename()))
+    # download track
+    youtube_api.download(pytube_obj, DATABASE_DIR, track.get_id_filename())
+    return track, token_manager
 
 
 @app.before_first_request
 def start():
+    # music_controller.connect()
     spotify_api.set_redirect_uri(url_for("save_login", _external=True))
 
 
@@ -90,9 +92,11 @@ def skip():
 def visualizer():
     if not session.get("token_info", None):
         return redirect(url_for("homepage"))
-    track, token_manager, song_path = download_cur_song(
+    track, token_manager = download_cur_song(
         session["token_info"]
     )
-    song_path = Path(song_path)
-    song_path = song_path.relative_to(*song_path.parts[:1])
-    return render_template("visualizer.html", file_path=song_path)
+    file_path = os.path.join(DATABASE_DIR.replace("app", ""),
+                             track.get_id_filename())
+    return render_template(
+        "visualizer.html", file_path=file_path, song_name=track.get_name()
+    )

@@ -1,5 +1,7 @@
 FROM python:3.10.4
 
+EXPOSE 5000
+
 WORKDIR /app
 
 ADD . /app

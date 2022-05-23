@@ -35,6 +35,9 @@ class Track:
     def get_id(self) -> str:
         return self.track["item"]["id"]
 
+    def get_id_filename(self) -> str:
+        return self.track["item"]["id"] + ".aac"
+
     def get_filename(self) -> str:
         return replace_illegal_chars(
             f"{self.get_name()} - {', '.join(self.get_artist_names())}.aac"

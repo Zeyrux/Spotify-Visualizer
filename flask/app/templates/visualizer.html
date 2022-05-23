@@ -8,7 +8,7 @@
 <body>
     <canvas id="canvas"></canvas>
     <audio id="audio" loop controls autoplay src="{{file_path}}" style="position: absolute;"></audio>
-    <script src="{{url_for('static', filename='scritps/visualizer.js')}}" id="script" file_path="{{file_path}}"></script>
-    <script src="{{url_for('static', filename='scritps/controller.js')}}" id="script" file_path="{{file_path}}"></script>
+    <script src="{{url_for('static', filename='scritps/visualizer.js')}}" id="script" file_path="{{file_path}}" song_name="{{song_name}}"></script>
+    <script src="{{url_for('static', filename='scritps/controller.js')}}"></script>
 </body>
 </html>

@@ -1,14 +1,14 @@
-version: "3.7"
+version: "2.5.1"
 services:
 
   flask:
     build: ./flask
     container_name: flask
     restart: always
+    links:
+      - database
     environment:
       - APP_NAME=MyFlaskAPP
-    expose:
-      - 5000
 
   nginx:
     build: ./nginx
@@ -16,3 +16,13 @@ services:
     restart: always
     ports:
       - "5000:5000"
+
+  database:
+    image: mysql:8.0.29
+    container_name: database
+    ports:
+      - "32000:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d/:ro

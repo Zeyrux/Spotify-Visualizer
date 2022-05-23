@@ -1,6 +1,6 @@
 let file_path = document.getElementById("script").getAttribute("file_path");
+let songname = document.getElementById("script").getAttribute("song_name");
 let canvas = document.getElementById("canvas");
-let songname = file_path.replace(".aac");
 let audio = document.getElementById("audio");
 
 let bar_width = 1;
