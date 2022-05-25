@@ -1,4 +1,5 @@
 import time
+from dataclasses import dataclass, field
 
 import requests
 from spotipy.oauth2 import SpotifyOAuth
@@ -15,51 +16,47 @@ def replace_illegal_chars(path: str) -> str:
     path = path.replace("<", "")
     return path.replace(">", "")
 
-
+@dataclass
 class Track:
-    def __init__(self, spotify_track: dict):
-        self.track = spotify_track
+    name: str
+    id: str
+    artists: list
+    album_name: str
+    album_artists: list
+    duration_ms: int
+    progress_ms: int
+    duration_s: int = field(init=False)
+    progress_s: int = field(init=False)
+    id_filename: str = field(init=False)
+    filename: str = field(init=False)
 
-    def get_progress_ms(self) -> int:
-        return self.track["progress_ms"]
-
-    def get_progress_s(self) -> int:
-        return round(self.track["progress_ms"] / 1000)
-
-    def get_duration_ms(self) -> int:
-        return self.track["item"]["duration_ms"]
-
-    def get_duration_s(self) -> int:
-        return round(self.track["item"]["duration_ms"] / 1000)
-
-    def get_id(self) -> str:
-        return self.track["item"]["id"]
-
-    def get_id_filename(self) -> str:
-        return self.track["item"]["id"] + ".aac"
-
-    def get_filename(self) -> str:
-        return replace_illegal_chars(
-            f"{self.get_name()} - {', '.join(self.get_artist_names())}.aac"
+    def __post_init__(self):
+        self.duration_s = round(self.duration_ms / 1000)
+        self.progress_s = round(self.progress_ms / 1000)
+        self.id_filename = f"{self.id}.aac"
+        self.filename = replace_illegal_chars(
+            f"{self.name} - {', '.join(self.album_artists)}.aac"
         )
 
-    def get_name(self) -> str:
-        return self.track["item"]["name"]
-
-    def get_album_name(self) -> str:
-        return self.track["item"]["album"]["name"]
-
-    def get_artist_names(self) -> list[str]:
+    @staticmethod
+    def from_response(response: dict):
         artists = []
-        for artist in self.track["item"]["artists"]:
+        for artist in response["item"]["artists"]:
             artists.append(artist["name"])
-        return artists
 
-    def get_album_artist_names(self) -> list[str]:
-        artists = []
-        for artist in self.track["item"]["album"]["artists"]:
-            artists.append(artist["name"])
-        return artists
+        album_artists = []
+        for album_artists in response["item"]["album"]["artists"]:
+            artists.append(album_artists["name"])
+
+        return Track(
+            response["item"]["name"],
+            response["item"]["id"],
+            artists,
+            response["item"]["album"]["name"],
+            album_artists,
+            response["item"]["duration_ms"],
+            response["progress_ms"]
+        )
 
 
 class TokenManager:
@@ -104,8 +101,11 @@ class SpotifyAPI:
 
     def get_currently_playing_track(self, access_token: str,
                                     token_type: str) -> Track:
-        response = requests.get(
-            url="https://api.spotify.com/v1/me/player/currently-playing",
-            headers={"Authorization": f"{token_type} {access_token}"}
-        ).json()
-        return Track(response)
+        try:
+            response = requests.get(
+                url="https://api.spotify.com/v1/me/player/currently-playing",
+                headers={"Authorization": f"{token_type} {access_token}"}
+            ).json()
+        except Exception:
+            return None
+        return Track.from_response(response)

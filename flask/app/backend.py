@@ -1,6 +1,5 @@
 import os
 import secrets
-from pathlib import Path
 
 from app.SpotifyAPI import SpotifyAPI, TokenManager
 from app.YoutubeAPI import YoutubeAPI
@@ -52,13 +51,13 @@ def download_cur_song(token_info) -> tuple["Track", "TokenManager"]:
     # search for track
     pytube_obj = youtube_api.search_song(track)
     # download track
-    youtube_api.download(pytube_obj, DATABASE_DIR, track.get_id_filename())
+    youtube_api.download(pytube_obj, DATABASE_DIR, track.id_filename)
     return track, token_manager
 
 
 @app.before_first_request
 def start():
-    music_controller.connect()
+    # music_controller.connect()
     spotify_api.set_redirect_uri(url_for("save_login", _external=True))
 
 
@@ -96,7 +95,7 @@ def visualizer():
         session["token_info"]
     )
     file_path = os.path.join(DATABASE_DIR.replace("app", ""),
-                             track.get_id_filename())
+                             track.id_filename)
     return render_template(
-        "visualizer.html", file_path=file_path, song_name=track.get_name()
+        "visualizer.html", file_path=file_path, song_name=track.name
     )

@@ -17,8 +17,9 @@ class MusicController:
             'password': 'root',
             'host': 'database',
             'port': '3306',
-            'database': 'songs'
+            'database': 'Music'
         }
         self.connection = connector.connect(**config)
 
-
+    def get_song(self, old_track) -> Path:
+        pass

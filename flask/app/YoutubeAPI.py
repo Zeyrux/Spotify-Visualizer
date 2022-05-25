@@ -60,9 +60,9 @@ class YoutubeAPI:
                        artists_intitle=True,
                        search_artists=True) -> pytube.YouTube:
         # define args for search
-        q = f"({'intitle:' if name_intitle else ''}{track.get_name()})"
+        q = f"({'intitle:' if name_intitle else ''}{track.name})"
         if search_artists:
-            for artist in track.get_artist_names():
+            for artist in track.artists:
                 q += f"({'intitle:' if artists_intitle else ''}{artist})"
         args = {"q": q,
                 "maxResults": max_results,
@@ -75,9 +75,9 @@ class YoutubeAPI:
             url = f"https://www.youtube.com/watch?v=" \
                   f"{track_found['id']['videoId']}"
             track_pytube = pytube.YouTube(url)
-            if track.get_duration_s() - max_duration_difference \
+            if track.duration_s - max_duration_difference \
                     < track_pytube.length \
-                    < track.get_duration_s() + max_duration_difference:
+                    < track.duration_s + max_duration_difference:
                 return track_pytube
 
     def search_song(self,
