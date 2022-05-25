@@ -10,7 +10,6 @@ class MusicController:
             self.path_database.mkdir(parents=True, exist_ok=True)
 
         self.connection: connector.connection_cext.CMySQLConnection = None
-        self.cursor: connector.connection_cext.CMySQLCursor = None
 
     def connect(self):
         config = {
@@ -21,6 +20,5 @@ class MusicController:
             'database': 'songs'
         }
         self.connection = connector.connect(**config)
-        self.cursor = self.connection.cursor()
 
 

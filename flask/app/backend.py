@@ -58,7 +58,7 @@ def download_cur_song(token_info) -> tuple["Track", "TokenManager"]:
 
 @app.before_first_request
 def start():
-    # music_controller.connect()
+    music_controller.connect()
     spotify_api.set_redirect_uri(url_for("save_login", _external=True))
 
 
