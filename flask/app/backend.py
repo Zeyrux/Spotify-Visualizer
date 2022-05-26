@@ -48,16 +48,21 @@ def download_cur_song(token_info) -> tuple["Track", "TokenManager"]:
     track = spotify_api.get_currently_playing_track(
         token_manager.get_access_token(), token_manager.get_token_type()
     )
-    # search for track
-    pytube_obj = youtube_api.search_song(track)
-    # download track
-    youtube_api.download(pytube_obj, DATABASE_DIR, track.id_filename)
+    if track is None:
+        pass
+    else:
+        # search for track
+        pytube_obj = youtube_api.search_song(track)
+        # download track
+        youtube_api.download(pytube_obj, DATABASE_DIR, track.id_filename)
+        # add song data to database
+        music_controller.save_song(track)
     return track, token_manager
 
 
 @app.before_first_request
 def start():
-    # music_controller.connect()
+    music_controller.connect()
     spotify_api.set_redirect_uri(url_for("save_login", _external=True))
 
 

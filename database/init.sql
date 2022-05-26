@@ -1,23 +1,33 @@
-CREATE DATABASE Music [IF NOT EXISTS];
-CREATE TABLE [IF NOT EXISTS] Artists (
-    artist_group_id varchar(255) NOT NULL,
-    artist_ids varchar(255) NOT NULL,
-    artist_names varchar(255) NOT NULL,
-    PRIMARY KEY (artist_group_id)
-)
+CREATE DATABASE IF NOT EXISTS Music;
+USE Music;
 
-CREATE TABLE [IF NOT EXISTS] Playlist (
-    playlist_id = varchar(255) NOT NULL,
-    playlist_name varchar(255) NOT NULL,
-    PRIMARY KEY (playlist_id)
-)
+CREATE TABLE IF NOT EXISTS Song (
+    id VARCHAR(22) NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
 
-CREATE TABLE [IF NOT EXISTS] Song (
-    song_id varchar(255) NOT NULL,
-    song_name varchar(255) NOT NULL,
-    song_playlist = varchar(255),
-    song_artists = varchar(255),
-    FOREIGN KEY (song_playlist) REFERENCES Playlist(playlist_id),
-    FOREIGN KEY (song_artists) REFERENCES Artists(artist_ids)
-    PRIMARY KEY (ID)
-)
+CREATE TABLE IF NOT EXISTS Artist (
+    id VARCHAR(22) NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS Album (
+    id VARCHAR(22) NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    song_id VARCHAR(244) NOT NULL,
+    FOREIGN KEY (song_id) REFERENCES Song(id)
+);
+
+CREATE TABLE IF NOT EXISTS AlbumArtists (
+    id_album VARCHAR(22) NOT NULL,
+    id_artist VARCHAR(22) NOT NULL,
+    FOREIGN KEY (id_album) REFERENCES Album(id),
+    FOREIGN KEY (id_artist) REFERENCES Artist(id)
+);
+
+CREATE TABLE IF NOT EXISTS SongArtists (
+    id_song VARCHAR(22) NOT NULL,
+    id_artist VARCHAR(22) NOT NULL,
+    FOREIGN KEY (id_song) REFERENCES Song(id),
+    FOREIGN KEY (id_artist) REFERENCES Artist(id)
+);

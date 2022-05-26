@@ -16,13 +16,32 @@ def replace_illegal_chars(path: str) -> str:
     path = path.replace("<", "")
     return path.replace(">", "")
 
+
+@dataclass
+class Artist:
+    name: str
+    id: str
+
+    def __str__(self):
+        return self.name
+
+
+@dataclass
+class Album:
+    name: str
+    id: str
+    artists: list[Artist]
+
+    def __str__(self):
+        return self.name
+
+
 @dataclass
 class Track:
     name: str
     id: str
-    artists: list
-    album_name: str
-    album_artists: list
+    artists: list[Artist]
+    album: Album
     duration_ms: int
     progress_ms: int
     duration_s: int = field(init=False)
@@ -35,25 +54,30 @@ class Track:
         self.progress_s = round(self.progress_ms / 1000)
         self.id_filename = f"{self.id}.aac"
         self.filename = replace_illegal_chars(
-            f"{self.name} - {', '.join(self.album_artists)}.aac"
+            f"{self.name} - "
+            f"{', '.join([str(artist) for artist in self.artists])}.aac"
         )
 
     @staticmethod
     def from_response(response: dict):
         artists = []
         for artist in response["item"]["artists"]:
-            artists.append(artist["name"])
+            artists.append(Artist(artist["name"], artist["id"]))
 
         album_artists = []
-        for album_artists in response["item"]["album"]["artists"]:
-            artists.append(album_artists["name"])
+        for album_artist in response["item"]["album"]["artists"]:
+            album_artists.append(Artist(album_artist["name"],
+                                        album_artist["id"]))
+
+        album = Album(response["item"]["album"]["name"],
+                      response["item"]["album"]["id"],
+                      album_artists)
 
         return Track(
             response["item"]["name"],
             response["item"]["id"],
             artists,
-            response["item"]["album"]["name"],
-            album_artists,
+            album,
             response["item"]["duration_ms"],
             response["progress_ms"]
         )
@@ -100,7 +124,7 @@ class SpotifyAPI:
                             redirect_uri=self.redirect_uri)
 
     def get_currently_playing_track(self, access_token: str,
-                                    token_type: str) -> Track:
+                                    token_type: str) -> Track | None:
         try:
             response = requests.get(
                 url="https://api.spotify.com/v1/me/player/currently-playing",

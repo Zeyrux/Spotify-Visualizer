@@ -63,7 +63,7 @@ class YoutubeAPI:
         q = f"({'intitle:' if name_intitle else ''}{track.name})"
         if search_artists:
             for artist in track.artists:
-                q += f"({'intitle:' if artists_intitle else ''}{artist})"
+                q += f"({'intitle:' if artists_intitle else ''}{str(artist)})"
         args = {"q": q,
                 "maxResults": max_results,
                 "order": order}
