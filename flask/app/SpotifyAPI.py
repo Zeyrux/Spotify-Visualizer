@@ -1,3 +1,4 @@
+from json.decoder import JSONDecodeError
 import time
 from dataclasses import dataclass, field
 
@@ -19,8 +20,8 @@ def replace_illegal_chars(path: str) -> str:
 
 @dataclass
 class Artist:
-    name: str
     id: str
+    name: str
 
     def __str__(self):
         return self.name
@@ -28,8 +29,8 @@ class Artist:
 
 @dataclass
 class Album:
-    name: str
     id: str
+    name: str
     artists: list[Artist]
 
     def __str__(self):
@@ -38,8 +39,8 @@ class Album:
 
 @dataclass
 class Track:
-    name: str
     id: str
+    name: str
     artists: list[Artist]
     album: Album
     duration_ms: int
@@ -62,20 +63,20 @@ class Track:
     def from_response(response: dict):
         artists = []
         for artist in response["item"]["artists"]:
-            artists.append(Artist(artist["name"], artist["id"]))
+            artists.append(Artist(artist["id"], artist["name"]))
 
         album_artists = []
         for album_artist in response["item"]["album"]["artists"]:
-            album_artists.append(Artist(album_artist["name"],
-                                        album_artist["id"]))
+            album_artists.append(Artist(album_artist["id"],
+                                        album_artist["name"]))
 
-        album = Album(response["item"]["album"]["name"],
-                      response["item"]["album"]["id"],
+        album = Album(response["item"]["album"]["id"],
+                      response["item"]["album"]["name"],
                       album_artists)
 
         return Track(
-            response["item"]["name"],
             response["item"]["id"],
+            response["item"]["name"],
             artists,
             album,
             response["item"]["duration_ms"],
@@ -130,6 +131,8 @@ class SpotifyAPI:
                 url="https://api.spotify.com/v1/me/player/currently-playing",
                 headers={"Authorization": f"{token_type} {access_token}"}
             ).json()
-        except Exception:
-            return None
+        except JSONDecodeError:
+            return
+        if response["item"] is None:
+            return
         return Track.from_response(response)
