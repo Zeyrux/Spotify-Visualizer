@@ -74,16 +74,14 @@ def save_login():
     return redirect(url_for("visualizer"))
 
 
-@app.route("/skip", methods=["GET"])
-def skip():
-    pass
-
-
 @app.route("/visualizer", methods=["GET"])
 def visualizer():
     if not session.get("token_info", None):
         return redirect(url_for("homepage"))
-    track = music_controller.get_song()
+    if "back" in request.args:
+        track = music_controller.get_last_song()
+    else:
+        track = music_controller.get_song()
     file_path = os.path.join(*DATABASE_DIR.parts[1:], track.id_filename)
     return render_template(
         "visualizer.html", file_path=file_path, song_name=track.name

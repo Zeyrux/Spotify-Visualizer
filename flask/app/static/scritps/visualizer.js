@@ -1,28 +1,37 @@
-let file_path = document.getElementById("script").getAttribute("file_path");
+import { setGradients, bars, gradientBars, gradientCircleAll, gradientCircleBass } from "./controller.js";
+
 let songname = document.getElementById("script").getAttribute("song_name");
 let canvas = document.getElementById("canvas");
 let audio = document.getElementById("audio");
 
 let bar_width = 1;
 let frame_cnt = 0;
+let analyser;
+let ctx;
 
-let fps = 60
-let now
-let then = Date.now()
-let interval = 1000 / fps
-let delta
+let fps = 60;
+let now;
+let then = Date.now();
+let interval = 1000 / fps;
+let delta;
 
 
 function init() {
-    audio.volume = 0.05;
-    
-    window.addEventListener("click", initMp3Player);
+    let context = new AudioContext();
+
+	if (context.state == "suspended") {
+		// audio context can not start
+		window.addEventListener("click", enable_anaylser);
+	} else {
+		// audio context started
+		enable_anaylser();
+	}
 }
 
+function enable_anaylser(){
+    window.removeEventListener("click", enable_anaylser);
 
-function initMp3Player(){
-    window.removeEventListener("click", initMp3Player);
-
+	audio.play();
 	let context = new AudioContext();
 	analyser = context.createAnalyser();
 	let source = context.createMediaElementSource(audio);

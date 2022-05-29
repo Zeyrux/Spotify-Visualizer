@@ -48,12 +48,13 @@ class MusicDownloader:
         pytube_obj = self.youtube_api.search_song(track)
         # download track
         self.youtube_api.download(pytube_obj, self.song_dir, track.id_filename)
-        print("SAVED: ", track.id_filename)
         # add song data to database
         self.controller.save_song(track)
+        print("Downloaded:", track.filename)
 
     def start(self, token_info: dict):
         self.token_info = token_info
+
         Thread(target=self.run, daemon=True).start()
 
     def run(self):

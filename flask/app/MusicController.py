@@ -7,13 +7,55 @@ from mysql import connector
 from mysql.connector import connection_cext
 
 
+class Tracks:
+    def __init__(self):
+        self.tracks = []
+        self.cur_track = -1
+
+    def __str__(self):
+        return f"Tracks(pt: {self.cur_track}, tracks: " \
+               f"[{','.join([track.name for track in self.tracks])}])"
+
+    def add_future_track(self, track: Track):
+        self.tracks.append(track)
+
+    def add_last_track(self, track: Track):
+        self.tracks.insert(self.cur_track, track)
+        self.cur_track += 1
+
+    def future_song_exists(self) -> bool:
+        return len(self.tracks) > self.cur_track + 1
+
+    def get_future_song(self) -> Track:
+        self.cur_track += 1
+        return self.tracks[self.cur_track]
+
+    def last_song_exists(self) -> bool:
+        return self.cur_track > 0
+
+    def get_last_song(self) -> Track:
+        self.cur_track -= 1
+        return self.tracks[self.cur_track]
+
+    def last_song(self) -> Track:
+        return self.tracks[self.cur_track - 1]
+
+    def cur_song_exists(self) -> bool:
+        return len(self.tracks) > 0
+
+    def get_cur_song(self) -> Track:
+        return self.tracks[self.cur_track]
+
+    def skip_song(self):
+        self.cur_track += 1
+
+
 class MusicController:
     def __init__(self, path_database: Path):
         self.path_database = path_database
         if not self.path_database.is_dir():
             self.path_database.mkdir(parents=True, exist_ok=True)
-        self.last_tracks: list[Track] = []
-        self.future_tracks: list[Track] = []
+        self.tracks = Tracks()
 
         self.connection: connection_cext.CMySQLConnection | None = None
         self.cursor: connection_cext.CMySQLCursor | None = None
@@ -84,7 +126,8 @@ class MusicController:
         config = {
             "user": "root",
             "password": "root",
-            "host": "database",
+            # "host": "database",
+            "host": "localhost",
             "port": "3306",
             "database": "Music"
         }
@@ -93,7 +136,7 @@ class MusicController:
 
     def save_song(self, track: Track):
         # refresh cur, last track
-        self.future_tracks.append(track)
+        self.tracks.add_future_track(track)
 
         # insert artists of song
         for artist in track.artists:
@@ -147,38 +190,46 @@ class MusicController:
 
     def get_song(self) -> Track:
         # return future song
-        if self.future_tracks:
-            future_song = self.future_tracks.pop(0)
-            self.last_tracks.append(future_song)
-            return future_song
+        if self.tracks.future_song_exists():
+            return self.tracks.get_future_song()
 
         # return random song
-        if not self.last_tracks:
-            track = self.get_random_song()
-            self.last_tracks.append(track)
-            return track
+        if not self.tracks.cur_song_exists():
+            self.tracks.add_future_track(self.get_random_song())
+            return self.tracks.get_future_song()
 
-        last_track = self.last_tracks[-1]
+        cur_track = self.tracks.get_cur_song()
 
         # get song by album
         self.cursor.execute(f"SELECT id FROM Song "
-                            f"WHERE id_album = '{last_track}' "
-                            f"AND id != '{last_track.id}'")
+                            f"WHERE id_album = '{cur_track.album.id}' "
+                            f"AND id != '{cur_track.id}'")
         for track_id in self.cursor:
             self.cursor.reset()
-            track = self._get_song_track_from_db(track_id[0])
-            self.last_tracks.append(track)
-            return track
+            self.tracks.add_future_track(
+                self._get_song_track_from_db(track_id[0])
+            )
+            return self.tracks.get_future_song()
         self.cursor.reset()
 
         # get song by artist
-        for artist in last_track.artists:
-            self.cursor.execute(f"SELECT id_song FROM SongArtist "
+        for artist in cur_track.artists:
+            self.cursor.execute(f"SELECT id_song FROM SongArtists "
                                 f"WHERE id_artist = '{artist.id}' "
-                                f"AND id_song != '{last_track.id}'")
+                                f"AND id_song != '{cur_track.id}'")
             for track_id in self.cursor:
                 self.cursor.reset()
-                track = self._get_song_track_from_db(track_id[0])
-                self.last_tracks.append(track)
-                return track
+                self.tracks.add_future_track(
+                    self._get_song_track_from_db(track_id[0])
+                )
+                return self.tracks.get_future_song()
             self.cursor.reset()
+
+        # if not song found: return random
+        self.tracks.add_future_track(self.get_random_song())
+        return self.tracks.get_future_song()
+
+    def get_last_song(self) -> Track:
+        if not self.tracks.last_song_exists():
+            self.tracks.add_last_track(self.get_random_song())
+        return self.tracks.get_last_song()
