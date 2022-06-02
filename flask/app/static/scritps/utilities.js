@@ -31,22 +31,24 @@ export function create_form(form_id, submit_value, create_hidden, hidden_value, 
 
 
 export function set_true(element) {
-    element.style.background = "rgb(105, 255, 74)";
+    element.style.background = "rgb(154, 204, 144)";
 }
 
 
 export function set_false(element) {
-    element.style.background = "rgb(211, 102, 102)";
+    element.style.background = "rgb(187, 104, 104)";
 }
 
 
 export function create_checkable_button(innerHTML, update_variable, clicked) {
     let button = document.createElement("button");
     button.innerHTML = innerHTML;
+    
     if (clicked)
         set_true(button);
     else
         set_false(button);
+    // click
     button.addEventListener("click", function (e) {
         if (controller[update_variable]) {
             controller[update_variable] = false;
@@ -56,12 +58,14 @@ export function create_checkable_button(innerHTML, update_variable, clicked) {
             set_true(button);
         };
     });
+    // hover begin
     button.addEventListener("mouseenter", function (e) {
         if (controller[update_variable])
             set_false(button);
         else
             set_true(button);
     });
+    // hover leave
     button.addEventListener("mouseleave", function (e) {
         if (controller[update_variable])
             set_true(button);
@@ -78,4 +82,49 @@ export function create_button(innerHTML, button_class, id) {
     button.className = button_class;
     button.id = id;
     return button;
+}
+
+
+export function create_slider(min, step, max, value, id) {
+    let slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = min;
+    slider.step = step;
+    slider.max = max;
+    slider.value = value;
+    slider.id = id;
+    return slider
+}
+
+
+export function create_slider_volume(start) {
+    let div = document.createElement("div");
+    let div_slider = document.createElement("div");
+
+    // create slider
+    let slider_func = function (e) {
+        let huge = document.getElementById("volume_huge").value;
+        let small = document.getElementById("volume_small").value;
+        let volume = parseFloat(huge) + parseFloat(small);
+        document.getElementById("audio").volume = volume;
+        document.getElementById("volume_label").innerHTML = parseFloat(volume).toFixed(3) + "🔈";
+    }
+
+    let slider_huge = create_slider(0, 0.02, 1, start, "volume_huge");
+    slider_huge.addEventListener("input", slider_func);
+
+    let slider_small = create_slider(0, 0.001, 0.02, 0, "volume_small");
+    slider_small.addEventListener("input", slider_func);
+
+    div_slider.appendChild(slider_huge);
+    div_slider.appendChild(slider_small);
+
+    // create label
+    let label = document.createElement("label");
+    label.id = "volume_label";
+    label.innerHTML = parseFloat(start).toFixed(3) + "🔈";
+
+    div.appendChild(div_slider);
+    div.appendChild(label);
+    return div;
 }

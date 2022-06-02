@@ -39,7 +39,7 @@ class MusicDownloader:
 
     def _format_song(self, path_song: str):
         cpy_path = path_song[:path_song.rindex('.')] \
-                   + "copy" + path_song[path_song.rindex('.') - 1:]
+                   + "copy" + path_song[path_song.rindex('.'):]
         # change codec
         os.system(
             f"ffmpeg -y -loglevel quiet -i "
@@ -58,7 +58,7 @@ class MusicDownloader:
         # normalize volume
         os.system(
             f"ffmpeg -y -loglevel quiet -i "
-            f"{path_song} -af 'volume=5dB' {path_song}"
+            f"{path_song} -af 'volume=1dB' {path_song}"
         )
         os.remove(cpy_path)
 

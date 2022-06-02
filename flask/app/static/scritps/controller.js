@@ -1,4 +1,4 @@
-import { create_form, create_button, create_checkable_button } from "./utilities.js";
+import { create_form, create_button, create_checkable_button, create_slider_volume } from "./utilities.js";
 import { controller } from "./init.js";
 
 export var gradientBars;
@@ -40,6 +40,7 @@ function init() {
 	controlls.appendChild(create_form("back_form", "Back", true, "back", "back"));
 	controlls.appendChild(create_button("Pause", "hover_button", "play_pause"));
 	controlls.appendChild(create_checkable_button("Loop", "loop_active", false));
+	controlls.appendChild(create_slider_volume(audio.volume));
 
 	// add play and pause
 	let button_play_pause = document.getElementById("play_pause");
