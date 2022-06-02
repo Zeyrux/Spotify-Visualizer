@@ -13,11 +13,36 @@ canvas {
     position: absolute;
 }
 
-div {
+#controlls {
     margin: 30px 0 0 0;
     display: flex;
     justify-content: center;
     position: absolute;
     opacity: 0.6;
     width: 100%;
+}
+
+#controlls div {
+    vertical-align: middle;
+}
+
+#controlls input[type="submit"], #controlls button {
+    font-size: 40px;
+    color: rgb(106, 52, 208);
+    background: rgb(219, 221, 121, 0.5);
+    border: 3px solid rgb(87, 112, 155);
+    border-radius: 40px;
+    transition: 200ms;
+    margin: 0 7px;
+    cursor: pointer;
+}
+
+
+#controlls button {
+    transition: 500ms;
+}
+
+  
+#controlls input[type="submit"]:hover, #controlls .hover_button:hover {
+    background: rgb(105, 123, 214);
 }

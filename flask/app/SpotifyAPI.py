@@ -31,6 +31,7 @@ class Artist:
 class Album:
     id: str
     name: str
+    image_url: str
     artists: list[Artist]
 
     def __str__(self):
@@ -53,10 +54,10 @@ class Track:
     def __post_init__(self):
         self.duration_s = round(self.duration_ms / 1000)
         self.progress_s = round(self.progress_ms / 1000)
-        self.id_filename = f"{self.id}.aac"
+        self.id_filename = f"{self.id}.mp3"
         self.filename = replace_illegal_chars(
             f"{self.name} - "
-            f"{', '.join([str(artist) for artist in self.artists])}.aac"
+            f"{', '.join([str(artist) for artist in self.artists])}.mp3"
         )
 
     @staticmethod
@@ -72,6 +73,7 @@ class Track:
 
         album = Album(response["item"]["album"]["id"],
                       response["item"]["album"]["name"],
+                      response["item"]["album"]["images"][0]["url"],
                       album_artists)
 
         return Track(

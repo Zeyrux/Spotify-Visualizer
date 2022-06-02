@@ -8,6 +8,11 @@ from app.YoutubeAPI import YoutubeAPI
 from app.YoutubeAppsBuilder import YoutubeAppsBuilder
 
 
+import eyed3
+from eyed3.id3.frames import ImageFrame
+from urllib.request import urlretrieve
+
+
 def get_clt_id(keys_dir: Path):
     return open(os.path.join(keys_dir, "spotify_clt_id.txt"), "r").read()
 
@@ -32,6 +37,59 @@ class MusicDownloader:
             YoutubeAppsBuilder(os.path.join(keys_dir, "youtube.txt"))
         )
 
+    def _format_song(self, path_song: str):
+        cpy_path = path_song[:path_song.rindex('.')] \
+                   + "copy" + path_song[path_song.rindex('.') - 1:]
+        # change codec
+        os.system(
+            f"ffmpeg -y -loglevel quiet -i "
+            f"{path_song} -acodec mp3 -vcodec copy {cpy_path}"
+        )
+        # remove silent begin and end
+        os.system(
+            f"ffmpeg -y -loglevel quiet -i "
+            f"\"{cpy_path}\" "
+            f"-af silenceremove=start_periods=1:start_silence=0.1:"
+            f"start_threshold=-50dB,areverse,"
+            f"silenceremove=start_periods=1:start_silence=0.1:"
+            f"start_threshold=-50dB,areverse "
+            f"\"{path_song}\""
+        )
+        # normalize volume
+        os.system(
+            f"ffmpeg -y -loglevel quiet -i "
+            f"{path_song} -af 'volume=5dB' {path_song}"
+        )
+        os.remove(cpy_path)
+
+    def _add_thumbnail(self, path_song: str, track: "Track"):
+        thumbnail_path = path_song[:path_song.rindex(".")] + "thumbnail.jpeg"
+        # get thumbnail
+        urlretrieve(track.album.image_url, thumbnail_path)
+
+        # add thumbnail
+        file = eyed3.load(path_song)
+        if file.tag is None:
+            file.initTag()
+        file.tag.images.set(ImageFrame.FRONT_COVER,
+                            open(thumbnail_path, "rb").read(),
+                            "image/jpeg")
+        file.tag.save()
+        os.remove(thumbnail_path)
+
+    def _add_song_data(self, path_song: str, track: "Track"):
+        file = eyed3.load(path_song)
+        if file.tag is None:
+            file.initTag()
+
+        file.tag.artist = "; ".join([str(artist) for artist in track.artists])
+        file.tag.album = track.album.name
+        file.tag.album_artist = "; ".join(
+            [str(artist) for artist in track.album.artists]
+        )
+        file.tag.title = track.name
+        file.tag.save()
+
     def download_cur_song(self):
         token_manager = TokenManager(self.token_info, self.spotify_api)
         # get cur track
@@ -48,6 +106,11 @@ class MusicDownloader:
         pytube_obj = self.youtube_api.search_song(track)
         # download track
         self.youtube_api.download(pytube_obj, self.song_dir, track.id_filename)
+        path_song = os.path.join(self.song_dir, track.id_filename)
+        # format song, add thumbnail, add song data
+        self._format_song(path_song)
+        self._add_thumbnail(path_song, track)
+        self._add_song_data(path_song, track)
         # add song data to database
         self.controller.save_song(track)
         print("Downloaded:", track.filename)

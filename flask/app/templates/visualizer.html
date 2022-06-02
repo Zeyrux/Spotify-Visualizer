@@ -8,7 +8,7 @@
 <body>
     <canvas id="canvas"></canvas>
     <div id="controlls"></div>
-    <audio id="audio" controls autoplay src="{{file_path}}" style="position: absolute;"></audio>
+    <audio id="audio" autoplay src="{{file_path}}" style="position: absolute;"></audio>
     <script src="{{url_for('static', filename='scritps/init.js')}}" type="module"></script>
     <script src="{{url_for('static', filename='scritps/utilities.js')}}" type="module"></script>
     <script src="{{url_for('static', filename='scritps/controller.js')}}" id="script" type="module" song_name="{{song_name}}"></script>

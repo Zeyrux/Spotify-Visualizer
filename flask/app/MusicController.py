@@ -94,7 +94,7 @@ class MusicController:
                             f"WHERE id = '{id_album}'")
         for album in self.cursor:
             self.cursor.reset()
-            album_id, album_name = album
+            album_id, album_name, album_img_url = album
 
         # album artists
         album_artists = []
@@ -108,7 +108,7 @@ class MusicController:
                 self.cursor.reset()
                 album_artists.append(Artist(album_artist[0], album_artist[1]))
 
-        album = Album(album_id, album_name, album_artists)
+        album = Album(album_id, album_name, album_img_url, album_artists)
         return Track(song_id, song_name, artists, album, 0, 0)
 
     def get_random_song(self) -> Track:
@@ -148,8 +148,9 @@ class MusicController:
 
         # insert album
         if not self.is_existing("Album", track.album.id):
-            sql = f"INSERT INTO Album(id, name) VALUES " \
-                  f"('{track.album.id}', '{track.album.name}')"
+            sql = f"INSERT INTO Album(id, name, image_url) VALUES " \
+                  f"('{track.album.id}', '{track.album.name}'," \
+                  f"'{track.album.image_url}')"
             self.cursor.execute(sql)
             self.cursor.reset()
 

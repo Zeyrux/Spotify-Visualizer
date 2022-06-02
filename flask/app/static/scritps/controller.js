@@ -1,4 +1,5 @@
-import { create_form, create_button } from "./utilities.js";
+import { create_form, create_button, create_checkable_button } from "./utilities.js";
+import { controller } from "./init.js";
 
 export var gradientBars;
 export var gradientCircleAll;
@@ -7,7 +8,6 @@ export var bars;
 
 let controlls = document.getElementById("controlls");
 let audio = document.getElementById("audio");
-let loop_active = false;
 
 function resize() {
     canvas.width = window.innerWidth - 20;
@@ -35,29 +35,35 @@ function init() {
 	window.addEventListener("resize", resize);
 	resize();
 
+	// add buttons
 	controlls.appendChild(create_form("skip_form", "Skip", false, undefined, undefined));
-	controlls.appendChild(create_form(undefined, "back", true, "back", "back"));
-	controlls.appendChild(create_button("Loop", "loop"))
+	controlls.appendChild(create_form("back_form", "Back", true, "back", "back"));
+	controlls.appendChild(create_button("Pause", "hover_button", "play_pause"));
+	controlls.appendChild(create_checkable_button("Loop", "loop_active", false));
 
+	// add play and pause
+	let button_play_pause = document.getElementById("play_pause");
+	button_play_pause.addEventListener("click", function (e) {
+		if (button_play_pause.innerHTML == "Pause")
+			audio.pause();
+		else
+			audio.play();
+	});
+
+	audio.onplay = (e) => document.getElementById("play_pause").innerHTML = "Pause";
+	audio.onpause = (e) => document.getElementById("play_pause").innerHTML = "Play";
+	navigator.mediaSession.setActionHandler("nexttrack", () => document.getElementById("skip_form").submit());
+	navigator.mediaSession.setActionHandler("previoustrack", () => document.getElementById("back_form").submit());
+
+	// skip song if song ends
 	window.setInterval(function (e) {
 		if (audio.currentTime > audio.duration - 1) {
-			if (loop_active)
+			if (controller["loop_active"])
 				audio.currentTime = 0;
 			else
 				document.getElementById("skip_form").submit();
 		}
 	}, 500);
-
-	let button_loop = document.getElementById("loop");
-	document.getElementById("loop").addEventListener("click", function() {
-		if (loop_active) {
-			loop_active = false;
-			button_loop.style.background = "rgb(211, 102, 102)";
-		} else {;
-			loop_active = true;;
-			button_loop.style.background = "rgb(42, 252, 0)";
-		};
-	});
 }
 
 
