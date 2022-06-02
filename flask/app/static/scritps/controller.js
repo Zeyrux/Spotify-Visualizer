@@ -1,4 +1,4 @@
-import { create_form, create_button, create_checkable_button, create_slider_volume } from "./utilities.js";
+import { create_form, create_button, create_checkable_button, create_slider_volume, create_slider_duration, seconds_to_string } from "./utilities.js";
 import { controller } from "./init.js";
 
 export var gradientBars;
@@ -36,6 +36,7 @@ function init() {
 	resize();
 
 	// add buttons
+	controlls.appendChild(create_slider_duration(audio.duration))
 	controlls.appendChild(create_form("skip_form", "Skip", false, undefined, undefined));
 	controlls.appendChild(create_form("back_form", "Back", true, "back", "back"));
 	controlls.appendChild(create_button("Pause", "hover_button", "play_pause"));
@@ -58,13 +59,15 @@ function init() {
 
 	// skip song if song ends
 	window.setInterval(function (e) {
+        document.getElementById("duration_label").innerHTML = seconds_to_string(audio.currentTime);
+		document.getElementById("duration_slider").value = audio.currentTime;
 		if (audio.currentTime > audio.duration - 1) {
 			if (controller["loop_active"])
 				audio.currentTime = 0;
 			else
 				document.getElementById("skip_form").submit();
 		}
-	}, 500);
+	}, 250);
 }
 
 

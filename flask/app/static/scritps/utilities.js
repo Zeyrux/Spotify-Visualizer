@@ -97,23 +97,55 @@ export function create_slider(min, step, max, value, id) {
 }
 
 
+export function seconds_to_string(seconds) {
+    seconds = parseInt(seconds);
+    let minutes = 0;
+    while (seconds > 60) {
+        minutes += 1;
+        seconds -= 60
+    }
+    if (seconds < 9)
+        seconds = "0" + seconds;
+    return minutes + ":" + seconds;
+}
+
+
+export function create_slider_duration(duration) {
+    let div = document.createElement("div");
+
+    let slider = create_slider(0, 1, duration, 0, "duration_slider")
+    slider.addEventListener("input", function (e) {
+        document.getElementById("duration_label").innerHTML = seconds_to_string(e.target.value);
+        document.getElementById("audio").currentTime = e.target.value;
+    });
+
+    let label = document.createElement("label");
+    label.id = "duration_label";
+    label.innerHTML = seconds_to_string(0);
+
+    div.appendChild(slider);
+    div.appendChild(label);
+    return div
+}
+
+
 export function create_slider_volume(start) {
     let div = document.createElement("div");
     let div_slider = document.createElement("div");
 
     // create slider
     let slider_func = function (e) {
-        let huge = document.getElementById("volume_huge").value;
-        let small = document.getElementById("volume_small").value;
+        let huge = document.getElementById("volume_slider_huge").value;
+        let small = document.getElementById("volume_slider_small").value;
         let volume = parseFloat(huge) + parseFloat(small);
         document.getElementById("audio").volume = volume;
         document.getElementById("volume_label").innerHTML = parseFloat(volume).toFixed(3) + "🔈";
     }
 
-    let slider_huge = create_slider(0, 0.02, 1, start, "volume_huge");
+    let slider_huge = create_slider(0, 0.02, 1, start, "volume_slider_huge");
     slider_huge.addEventListener("input", slider_func);
 
-    let slider_small = create_slider(0, 0.001, 0.02, 0, "volume_small");
+    let slider_small = create_slider(0, 0.001, 0.02, 0, "volume_slider_small");
     slider_small.addEventListener("input", slider_func);
 
     div_slider.appendChild(slider_huge);
