@@ -141,23 +141,27 @@ class MusicController:
         # insert artists of song
         for artist in track.artists:
             if not self.is_existing("Artist", artist.id):
+                artist_name = artist.name.replace("'", "\\'")
                 sql = f"INSERT INTO Artist (id, name) VALUES " \
-                      f"('{artist.id}', '{artist.name}')"
+                      f"('{artist.id}', '{artist_name}')"
                 self.cursor.execute(sql)
                 self.cursor.reset()
 
         # insert album
         if not self.is_existing("Album", track.album.id):
-            sql = f"INSERT INTO Album(id, name, image_url) VALUES " \
-                  f"('{track.album.id}', '{track.album.name}'," \
+            album_name = track.album.name.replace("'", "\\'")
+            sql = f"INSERT INTO Album (id, name, image_url) VALUES " \
+                  f"('{track.album.id}', '{album_name}', " \
                   f"'{track.album.image_url}')"
+            print(sql)
             self.cursor.execute(sql)
             self.cursor.reset()
 
         # insert song
         if not self.is_existing("Song", track.id):
+            track_name = track.name.replace("'", "\\'")
             sql = f"INSERT INTO Song (id, name, id_album) VALUES " \
-                  f"('{track.id}', '{track.name}', '{track.album.id}')"
+                  f"('{track.id}', '{track_name}', '{track.album.id}')"
             self.cursor.execute(sql)
             self.cursor.reset()
 
@@ -173,8 +177,9 @@ class MusicController:
         # insert artists of album
         for artist in track.album.artists:
             if not self.is_existing("Artist", artist.id):
+                artist_name = artist.name.replace("'", "\\'")
                 sql = f"INSERT INTO Artist (id, name) VALUES " \
-                      f"('{artist.id}', '{artist.name}')"
+                      f"('{artist.id}', '{artist_name}')"
                 self.cursor.execute(sql)
                 self.cursor.reset()
 

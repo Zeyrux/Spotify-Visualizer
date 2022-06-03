@@ -43,7 +43,7 @@ class MusicDownloader:
         # change codec
         os.system(
             f"ffmpeg -y -loglevel quiet -i "
-            f"{path_song} -acodec mp3 -vcodec copy {cpy_path}"
+            f"\"{path_song}\" -acodec mp3 -vcodec copy \"{cpy_path}\""
         )
         # remove silent begin and end
         os.system(
