@@ -28,7 +28,7 @@ function init() {
 	}
 }
 
-function enable_anaylser(){
+function enable_anaylser() {
     window.removeEventListener("click", enable_anaylser);
 
 	audio.play();

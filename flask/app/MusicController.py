@@ -60,6 +60,18 @@ class MusicController:
         self.connection: connection_cext.CMySQLConnection | None = None
         self.cursor: connection_cext.CMySQLCursor | None = None
 
+    def connect(self):
+        config = {
+            "user": "root",
+            "password": "root",
+            "host": "database",
+            # "host": "localhost",
+            "port": "3306",
+            "database": "Music"
+        }
+        self.connection = connector.connect(**config)
+        self.cursor = self.connection.cursor()
+
     def is_existing(self, table: str, id: str) -> bool:
         self.cursor.execute(
             f"SELECT * FROM {table} WHERE id = '{id}'"
@@ -121,18 +133,6 @@ class MusicController:
         # if not song exists in database, wait until one is added
         time.sleep(2)
         return self.get_random_song()
-
-    def connect(self):
-        config = {
-            "user": "root",
-            "password": "root",
-            # "host": "database",
-            "host": "localhost",
-            "port": "3306",
-            "database": "Music"
-        }
-        self.connection = connector.connect(**config)
-        self.cursor = self.connection.cursor()
 
     def save_song(self, track: Track):
         # refresh cur, last track

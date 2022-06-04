@@ -1,5 +1,4 @@
 import time
-import os
 from itertools import count
 from pathlib import Path
 

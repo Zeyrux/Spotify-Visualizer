@@ -8,6 +8,7 @@ export var bars;
 
 let controlls = document.getElementById("controlls");
 let audio = document.getElementById("audio");
+let post_init_id
 
 function resize() {
     canvas.width = window.innerWidth - 20;
@@ -28,6 +29,14 @@ export function setGradients() {
 	gradientCircleBass = ctx.createLinearGradient(canvas.width, 0, canvas.width, canvas.height);
 	gradientCircleBass.addColorStop(0, "rgba(0, 0, 255, 0.2)");
 	gradientCircleBass.addColorStop(0.5, "rgba(0, 255, 0, 0.2");
+}
+
+
+function post_init() {
+	if (! isNaN(audio.duration)) {
+		clearInterval(post_init_id);
+		document.getElementById("duration_slider").max = audio.duration;
+	}
 }
 
 
@@ -68,6 +77,8 @@ function init() {
 				document.getElementById("skip_form").submit();
 		}
 	}, 250);
+
+	post_init_id = window.setInterval(post_init, 100);
 }
 
 
