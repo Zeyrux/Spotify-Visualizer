@@ -160,3 +160,22 @@ export function create_slider_volume(start) {
     div.appendChild(label);
     return div;
 }
+
+
+export function create_fps() {
+    let select = document.createElement("select");
+    
+    // add all fps
+    let all_fps = [144, 60, 30, 15]
+    all_fps.forEach(fps => {
+        let option = document.createElement("option");
+        option.innerHTML = fps;
+        option.value = fps;
+        select.appendChild(option);
+    });
+
+    select.addEventListener("change", (e) => controller["fps"] = e.target.value);
+
+    select.value = controller["fps"];
+    return select;
+}

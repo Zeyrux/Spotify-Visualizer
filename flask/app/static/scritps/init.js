@@ -1,4 +1,4 @@
-export var controller = {"loop_active": false};
+export var controller = {"loop_active": false, "fps": 60};
 
 
 function init() {

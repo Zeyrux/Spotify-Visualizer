@@ -1,4 +1,5 @@
 import { setGradients, bars, gradientBars, gradientCircleAll, gradientCircleBass } from "./controller.js";
+import { controller } from "./init.js";
 
 let songname = document.getElementById("script").getAttribute("song_name");
 let canvas = document.getElementById("canvas");
@@ -9,10 +10,9 @@ let frame_cnt = 0;
 let analyser;
 let ctx;
 
-let fps = 60;
 let now;
 let then = Date.now();
-let interval = 1000 / fps;
+let interval = 1000 / controller["fps"];
 let delta;
 
 
@@ -27,6 +27,7 @@ function init() {
 		enable_anaylser();
 	}
 }
+
 
 function enable_anaylser() {
     window.removeEventListener("click", enable_anaylser);
@@ -58,6 +59,7 @@ function frameLopper() {
 
     now = Date.now();
     delta = now - then;
+	interval = 1000 / controller["fps"]
 
     if (delta > interval) {
         animate()
