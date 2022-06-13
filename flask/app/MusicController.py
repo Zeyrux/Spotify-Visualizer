@@ -64,8 +64,8 @@ class MusicController:
         config = {
             "user": "root",
             "password": "root",
-            # "host": "database",
-            "host": "localhost",
+            "host": "database",
+            # "host": "localhost",
             "port": "3306",
             "database": "Music"
         }
@@ -153,7 +153,6 @@ class MusicController:
             sql = f"INSERT INTO Album (id, name, image_url) VALUES " \
                   f"('{track.album.id}', '{album_name}', " \
                   f"'{track.album.image_url}')"
-            print(sql)
             self.cursor.execute(sql)
             self.cursor.reset()
 
