@@ -1,5 +1,6 @@
 import os
 import secrets
+import json
 from pathlib import Path
 
 from app.MusicDownloader import MusicDownloader
@@ -38,6 +39,8 @@ music_controller = MusicController(DATABASE_DIR)
 music_downloader = MusicDownloader(
     music_controller, DATABASE_DIR, KEYS_DIR
 )
+
+default_controller = '{"loop_active": false, "fps": 60, "volume": 0.20}'
 
 
 @app.before_first_request
@@ -78,11 +81,13 @@ def save_login():
 def visualizer():
     if not session.get("token_info", None):
         return redirect(url_for("homepage"))
-    if "back" in request.args:
-        track = music_controller.get_last_song()
-    else:
-        track = music_controller.get_song()
+
+    controller = request.args["controller"] if "controller" in request.args \
+        else default_controller
+    track = music_controller.get_last_song() if "back" in request.args \
+        else music_controller.get_song()
     file_path = os.path.join(*DATABASE_DIR.parts[1:], track.id_filename)
     return render_template(
-        "visualizer.html", file_path=file_path, song_name=track.name
+        "visualizer.html", file_path=file_path,
+        song_name=track.name, controller=controller
     )

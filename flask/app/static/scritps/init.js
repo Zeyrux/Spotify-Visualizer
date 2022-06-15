@@ -1,8 +1,8 @@
-export var controller = {"loop_active": false, "fps": 60};
+export var controller = JSON.parse(document.getElementById("init_script").getAttribute("controller"));
 
 
 function init() {
-    document.getElementById("audio").volume = 0.02;
+    document.getElementById("audio").volume = controller["volume"];
     document.getElementById("audio").play();
 }
 

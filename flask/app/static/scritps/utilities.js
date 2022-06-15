@@ -22,8 +22,15 @@ export function create_form(form_id, submit_value, create_hidden, hidden_value, 
         hidden_input.value = hidden_value;
         hidden_input.setAttribute("name", hidden_name);
     }
+
+    // create controller hidden
+    let controller_input = document.createElement("input");
+    controller_input.type = "hidden";
+    form.addEventListener("click", (e) => controller_input.value = JSON.stringify(controller));
+    controller_input.setAttribute("name", "controller");
     
     form.appendChild(submit);
+    form.appendChild(controller_input);
     if (create_hidden)
         form.appendChild(hidden_input);
     return form;
@@ -138,14 +145,16 @@ export function create_slider_volume(start) {
         let huge = document.getElementById("volume_slider_huge").value;
         let small = document.getElementById("volume_slider_small").value;
         let volume = parseFloat(huge) + parseFloat(small);
+        controller["volume"] = volume;
+        console.log(JSON.stringify(controller));
         document.getElementById("audio").volume = volume;
         document.getElementById("volume_label").innerHTML = parseFloat(volume).toFixed(3) + "🔈";
     }
 
-    let slider_huge = create_slider(0, 0.02, 1, start, "volume_slider_huge");
+    let slider_huge = create_slider(0, 0.02, 0.98, start, "volume_slider_huge");
     slider_huge.addEventListener("input", slider_func);
 
-    let slider_small = create_slider(0, 0.001, 0.02, 0, "volume_slider_small");
+    let slider_small = create_slider(0, 0.001, 0.02, start % 0.02, "volume_slider_small");
     slider_small.addEventListener("input", slider_func);
 
     div_slider.appendChild(slider_huge);
@@ -166,7 +175,7 @@ export function create_fps() {
     let select = document.createElement("select");
     
     // add all fps
-    let all_fps = [144, 60, 30, 15]
+    let all_fps = [240, 144, 60, 30, 15, 1]
     all_fps.forEach(fps => {
         let option = document.createElement("option");
         option.innerHTML = fps;

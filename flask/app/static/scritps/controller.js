@@ -74,8 +74,10 @@ function init() {
 		if (audio.currentTime > audio.duration - 1) {
 			if (controller["loop_active"])
 				audio.currentTime = 0;
-			else
+			else {
+				document.getElementById("skip_form").click();
 				document.getElementById("skip_form").submit();
+			}
 		}
 	}, 250);
 
