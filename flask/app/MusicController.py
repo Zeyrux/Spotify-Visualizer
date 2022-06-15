@@ -19,32 +19,33 @@ class Tracks:
     def add_future_track(self, track: Track):
         self.tracks.append(track)
 
-    def add_last_track(self, track: Track):
-        self.tracks.insert(self.cur_track, track)
-        self.cur_track += 1
-
     def future_song_exists(self) -> bool:
         return len(self.tracks) > self.cur_track + 1
 
     def get_future_song(self) -> Track:
         self.cur_track += 1
+        print(self.tracks[self.cur_track])
         return self.tracks[self.cur_track]
 
-    def last_song_exists(self) -> bool:
-        return self.cur_track > 0
+    def add_last_track(self, track: Track):
+        self.tracks.insert(self.cur_track, track)
+        self.cur_track += 1
 
     def get_last_song(self) -> Track:
         self.cur_track -= 1
         return self.tracks[self.cur_track]
 
+    def last_song_exists(self) -> bool:
+        return self.cur_track > 0
+
     def last_song(self) -> Track:
         return self.tracks[self.cur_track - 1]
 
-    def cur_song_exists(self) -> bool:
-        return len(self.tracks) > 0
-
     def get_cur_song(self) -> Track:
         return self.tracks[self.cur_track]
+
+    def cur_song_exists(self) -> bool:
+        return len(self.tracks) > 0
 
     def skip_song(self):
         self.cur_track += 1
@@ -64,8 +65,8 @@ class MusicController:
         config = {
             "user": "root",
             "password": "root",
-            "host": "database",
-            # "host": "localhost",
+            # "host": "database",
+            "host": "localhost",
             "port": "3306",
             "database": "Music"
         }
@@ -83,10 +84,10 @@ class MusicController:
 
     def _get_song_track_from_db(self, song_id) -> Track:
         # song
-        self.cursor.execute(f"SELECT name, id_album FROM Song "
-                            f"WHERE id = '{song_id}'")
+        self.cursor.execute(f"SELECT name, id_album, date_played, cnt_played "
+                            f"FROM Song WHERE id = '{song_id}'")
         for song in self.cursor:
-            song_name, id_album = song
+            song_name, id_album, date_played, cnt_played = song
         self.cursor.reset()
 
         # song artists
@@ -121,7 +122,9 @@ class MusicController:
                 album_artists.append(Artist(album_artist[0], album_artist[1]))
 
         album = Album(album_id, album_name, album_img_url, album_artists)
-        return Track(song_id, song_name, artists, album, 0, 0)
+        return Track(
+            song_id, song_name, artists, album, 0, 0, date_played, cnt_played
+        )
 
     def get_random_song(self) -> Track:
         self.cursor.execute(f"SELECT id FROM Song ORDER BY RAND()")
@@ -159,8 +162,10 @@ class MusicController:
         # insert song
         if not self.is_existing("Song", track.id):
             track_name = track.name.replace("'", "\\'")
-            sql = f"INSERT INTO Song (id, name, id_album) VALUES " \
-                  f"('{track.id}', '{track_name}', '{track.album.id}')"
+            sql = f"INSERT INTO Song" \
+                  f" (id, name, id_album, date_played, cnt_played) VALUES " \
+                  f"('{track.id}', '{track_name}', '{track.album.id}', " \
+                  f"'{track.date_played}', '{track.cnt_played}')"
             self.cursor.execute(sql)
             self.cursor.reset()
 

@@ -1,3 +1,4 @@
+import datetime
 from json.decoder import JSONDecodeError
 import time
 from dataclasses import dataclass, field
@@ -46,6 +47,8 @@ class Track:
     album: Album
     duration_ms: int
     progress_ms: int
+    date_played: datetime.date = datetime.date.today()
+    cnt_played: int = 0
     duration_s: int = field(init=False)
     progress_s: int = field(init=False)
     id_filename: str = field(init=False)
@@ -59,6 +62,9 @@ class Track:
             f"{self.name} - "
             f"{', '.join([str(artist) for artist in self.artists])}.mp3"
         )
+
+    def __eq__(self, other: "Track") -> bool:
+        return True if other.id == self.id else False
 
     @staticmethod
     def from_response(response: dict):

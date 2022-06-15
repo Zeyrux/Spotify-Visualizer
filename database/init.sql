@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS Song (
     id VARCHAR(22) NOT NULL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     id_album VARCHAR(255) NOT NULL,
+    date_played DATE NOT NULL,
+    cnt_played SMALLINT NOT NULL,
     FOREIGN KEY (id_album) REFERENCES Album(id)
 );
 

@@ -64,8 +64,14 @@ function init() {
 
 	audio.onplay = (e) => document.getElementById("play_pause").innerHTML = "Pause";
 	audio.onpause = (e) => document.getElementById("play_pause").innerHTML = "Play";
-	navigator.mediaSession.setActionHandler("nexttrack", () => document.getElementById("skip_form").submit());
-	navigator.mediaSession.setActionHandler("previoustrack", () => document.getElementById("back_form").submit());
+	navigator.mediaSession.setActionHandler("nexttrack", function (e) {
+		document.getElementById("skip_form").click();
+		document.getElementById("skip_form").submit();
+	});
+	navigator.mediaSession.setActionHandler("previoustrack", function (e) {
+		document.getElementById("back_form").click();
+		document.getElementById("back_form").submit();
+	});
 
 	// skip song if song ends
 	window.setInterval(function (e) {
