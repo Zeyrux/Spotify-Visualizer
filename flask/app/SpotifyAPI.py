@@ -1,3 +1,4 @@
+import base64
 import datetime
 from json.decoder import JSONDecodeError
 import time
@@ -46,7 +47,7 @@ class Track:
     artists: list[Artist]
     album: Album
     duration_ms: int
-    progress_ms: int
+    progress_ms: int = 0
     date_played: datetime.date = datetime.date.today()
     cnt_played: int = 0
     duration_s: int = field(init=False)
@@ -68,31 +69,73 @@ class Track:
 
     @staticmethod
     def from_response(response: dict):
+        item_access = "item" if "item" in response.values() else "track"
         artists = []
-        for artist in response["item"]["artists"]:
+        for artist in response[item_access]["artists"]:
             artists.append(Artist(artist["id"], artist["name"]))
 
         album_artists = []
-        for album_artist in response["item"]["album"]["artists"]:
+        for album_artist in response[item_access]["album"]["artists"]:
             album_artists.append(Artist(album_artist["id"],
                                         album_artist["name"]))
 
-        album = Album(response["item"]["album"]["id"],
-                      response["item"]["album"]["name"],
-                      response["item"]["album"]["images"][0]["url"],
+        album = Album(response[item_access]["album"]["id"],
+                      response[item_access]["album"]["name"],
+                      response[item_access]["album"]["images"][0]["url"],
                       album_artists)
 
+        kwargs = {"progress_ms": response["progress_ms"]} \
+            if "progress_ms" in response.values() else {}
+
         return Track(
-            response["item"]["id"],
-            response["item"]["name"],
+            response[item_access]["id"],
+            response[item_access]["name"],
             artists,
             album,
-            response["item"]["duration_ms"],
-            response["progress_ms"]
+            response[item_access]["duration_ms"],
+            **kwargs
         )
 
 
-class TokenManager:
+@dataclass
+class Playlist:
+    id: str
+    name: str
+    tracks: list[Track]
+
+    def __iter__(self):
+        for track in self.tracks:
+            yield track
+
+    @staticmethod
+    def from_request(response: dict) -> "Playlist":
+        id = response["id"]
+        name = response["name"]
+        tracks = []
+        for track in response["tracks"]["items"]:
+            tracks.append(Track.from_response(track))
+        print(tracks)
+        return Playlist(id, name, tracks)
+
+
+class AccessToken:
+    def __init__(self, access_token: str, token_type: str, expires_in: float):
+        self.token = access_token
+        self.token_type = token_type
+        self.expires = datetime.datetime.now() \
+                       + datetime.timedelta(seconds=expires_in)
+
+    @staticmethod
+    def from_json(data) -> "AccessToken":
+        return AccessToken(data["access_token"],
+                           data["token_type"],
+                           data["expires_in"])
+
+    def is_expired(self) -> bool:
+        return datetime.datetime.now() > self.expires
+
+
+class TokenManagerClient:
     def __init__(self, token_info: dict, spotify_api: "SpotifyAPI"):
         self.token_info = token_info
         self.spotify_api = spotify_api
@@ -116,11 +159,40 @@ class TokenManager:
         return self.get_token()["token_type"]
 
 
+class TokenManagerSpotify:
+    def __init__(self, access_token: AccessToken, spotify_api: "SpotifyAPI"):
+        self.access_token = access_token
+        self.spotify_api = spotify_api
+
+    def get_access_token(self) -> AccessToken:
+        if self.access_token.is_expired():
+            self.access_token = self.spotify_api.authorize()
+        return self.access_token
+
+
 class SpotifyAPI:
     def __init__(self, client_id: str, client_secret: str):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = None
+
+        self.url_token_spotify = "https://accounts.spotify.com/api/token"
+        self.token_data_spotify = {"grant_type": "client_credentials"}
+        client_creds = (base64.b64encode(
+            f'{client_id}:{client_secret}'.encode())
+        ).decode()
+        self.header_authorize_spotify = {
+            "Authorization": f"basic {client_creds}"
+        }
+
+    def authorize(self) -> AccessToken:
+        response = requests.post(self.url_token_spotify,
+                                 data=self.token_data_spotify,
+                                 headers=self.header_authorize_spotify)
+        if response.status_code not in range(200, 299):
+            raise Exception(
+                f"could not authorizse; STATUS: {response.status_code}")
+        return AccessToken.from_json(response.json())
 
     def set_redirect_uri(self, redirect_uri: str):
         if self.redirect_uri is None:
@@ -144,3 +216,13 @@ class SpotifyAPI:
         if response["item"] is None:
             return
         return Track.from_response(response)
+
+    def get_playlist(self, id: str, access_token: AccessToken) -> Playlist:
+        a = requests.get(
+            f"https://api.spotify.com/v1/playlists/{id}",
+            headers={"Authorization": f"{access_token.token_type} "
+                                      f"{access_token.token}"}
+        )
+        b = a.json()
+        c = Playlist.from_request(b)
+        return c

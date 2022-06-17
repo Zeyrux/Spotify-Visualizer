@@ -3,7 +3,7 @@ import os
 from threading import Thread
 from pathlib import Path
 
-from app.SpotifyAPI import SpotifyAPI, TokenManager
+from app.SpotifyAPI import SpotifyAPI, TokenManagerClient, TokenManagerSpotify
 from app.YoutubeAPI import YoutubeAPI
 from app.YoutubeAppsBuilder import YoutubeAppsBuilder
 
@@ -91,10 +91,21 @@ class MusicDownloader:
         file.tag.save()
 
     def download_cur_song(self):
-        token_manager = TokenManager(self.token_info, self.spotify_api)
+        token_manager_client = TokenManagerClient(
+            self.token_info, self.spotify_api
+        )
+        token_manager_spotify = TokenManagerSpotify(
+            self.spotify_api.authorize(), self.spotify_api
+        )
         # get cur track
+        access_token = token_manager_spotify.get_access_token()
+        self.spotify_api.get_playlist(
+            "09UxqNmHfXv0SR3dUwbvr2?si=9e5c76d322b14621", access_token
+        )
+
         track = self.spotify_api.get_currently_playing_track(
-            token_manager.get_access_token(), token_manager.get_token_type()
+            token_manager_client.get_access_token(),
+            token_manager_client.get_token_type()
         )
         # if not song found exit
         if track is None:
