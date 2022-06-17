@@ -3,7 +3,7 @@ import os
 from threading import Thread
 from pathlib import Path
 
-from app.SpotifyAPI import SpotifyAPI, TokenManagerClient, TokenManagerSpotify
+from app.SpotifyAPI import SpotifyAPI
 from app.YoutubeAPI import YoutubeAPI
 from app.YoutubeAppsBuilder import YoutubeAppsBuilder
 
@@ -26,13 +26,14 @@ class MusicDownloader:
     token_info: dict | None = None
 
     def __init__(self, ref_controller: "MusicController",
-                 song_dir: Path, keys_dir: Path):
+                 song_dir: Path, keys_dir: Path, redirect_url: str):
         self.controller = ref_controller
         self.song_dir = song_dir
 
         # api´s
-        self.spotify_api = SpotifyAPI(get_clt_id(keys_dir),
-                                      get_clt_secret(keys_dir))
+        self.spotify_api = SpotifyAPI(
+            get_clt_id(keys_dir), get_clt_secret(keys_dir), redirect_url
+        )
         self.youtube_api = YoutubeAPI(
             YoutubeAppsBuilder(os.path.join(keys_dir, "youtube.txt"))
         )
@@ -99,8 +100,9 @@ class MusicDownloader:
         )
         # get cur track
         access_token = token_manager_spotify.get_access_token()
-        self.spotify_api.get_playlist(
-            "09UxqNmHfXv0SR3dUwbvr2?si=9e5c76d322b14621", access_token
+        self.spotify_api.get_top_items(
+            token_manager_client.get_access_token(),
+            token_manager_client.get_token_type()
         )
 
         track = self.spotify_api.get_currently_playing_track(

@@ -37,7 +37,8 @@ app.config['SESSION_TYPE'] = 'filesystem'
 
 music_controller = MusicController(DATABASE_DIR)
 music_downloader = MusicDownloader(
-    music_controller, DATABASE_DIR, KEYS_DIR
+    music_controller, DATABASE_DIR,
+    KEYS_DIR, "http://localhost:5000/save_login"
 )
 
 default_controller = '{"loop_active": false, "fps": 60, "volume": 0.20}'
@@ -46,9 +47,6 @@ default_controller = '{"loop_active": false, "fps": 60, "volume": 0.20}'
 @app.before_first_request
 def start():
     music_controller.connect()
-    music_downloader.spotify_api.set_redirect_uri(
-        url_for("save_login", _external=True)
-    )
 
 
 @app.route("/favicon.ico")
@@ -69,9 +67,11 @@ def homepage():
 @app.route("/save_login", methods=["GET"])
 def save_login():
     code = request.args.get("code")
-    token_info = music_downloader.spotify_api.get_oauth().get_access_token(
-        code
-    )
+    token_info = music_downloader.spotify_api.authorize(code)
+    a = music_downloader.spotify_api.get_playlist("09UxqNmHfXv0SR3dUwbvr2")
+    b = music_downloader.spotify_api.get_album("5Nt0vfin9ooHL25ZMR9VI0")
+    c = music_downloader.spotify_api.get_track("125WPyjtYC4O0v31CDX7NB")
+
     session["token_info"] = token_info
     music_downloader.start(token_info)
     return redirect(url_for("visualizer"))
