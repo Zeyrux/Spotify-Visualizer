@@ -148,3 +148,6 @@ class SpotifyAPI:
 
     def get_track(self, id: str) -> Track:
         return Track.from_response(self.spotify.track(id))
+
+    def get_currently_playing_track(self) -> Track:
+        return Track.from_response(self.spotify.currently_playing()["item"])

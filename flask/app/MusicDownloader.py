@@ -92,23 +92,7 @@ class MusicDownloader:
         file.tag.save()
 
     def download_cur_song(self):
-        token_manager_client = TokenManagerClient(
-            self.token_info, self.spotify_api
-        )
-        token_manager_spotify = TokenManagerSpotify(
-            self.spotify_api.authorize(), self.spotify_api
-        )
-        # get cur track
-        access_token = token_manager_spotify.get_access_token()
-        self.spotify_api.get_top_items(
-            token_manager_client.get_access_token(),
-            token_manager_client.get_token_type()
-        )
-
-        track = self.spotify_api.get_currently_playing_track(
-            token_manager_client.get_access_token(),
-            token_manager_client.get_token_type()
-        )
+        track = self.spotify_api.get_currently_playing_track()
         # if not song found exit
         if track is None:
             return

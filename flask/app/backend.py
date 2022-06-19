@@ -1,6 +1,5 @@
 import os
 import secrets
-import json
 from pathlib import Path
 
 from app.MusicDownloader import MusicDownloader
@@ -68,10 +67,6 @@ def homepage():
 def save_login():
     code = request.args.get("code")
     token_info = music_downloader.spotify_api.authorize(code)
-    a = music_downloader.spotify_api.get_playlist("09UxqNmHfXv0SR3dUwbvr2")
-    b = music_downloader.spotify_api.get_album("5Nt0vfin9ooHL25ZMR9VI0")
-    c = music_downloader.spotify_api.get_track("125WPyjtYC4O0v31CDX7NB")
-
     session["token_info"] = token_info
     music_downloader.start(token_info)
     return redirect(url_for("visualizer"))
