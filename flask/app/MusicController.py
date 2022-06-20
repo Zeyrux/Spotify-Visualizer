@@ -123,7 +123,7 @@ class MusicController:
 
         album = Album(album_id, album_name, album_img_url, album_artists)
         return Track(
-            song_id, song_name, artists, album, 0, 0, date_played, cnt_played
+            song_id, song_name, artists, 0, album, 0, date_played, cnt_played
         )
 
     def get_random_song(self) -> Track:

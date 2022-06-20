@@ -56,7 +56,7 @@ class Track:
         return True if other.id == self.id else False
 
     @staticmethod
-    def from_response(response: dict):
+    def from_response(response: dict, album_pt: "Album" | None = None):
         artists = []
         for artist in response["artists"]:
             artists.append(Artist(artist["id"], artist["name"]))
@@ -68,6 +68,7 @@ class Track:
             response["name"],
             artists,
             response["duration_ms"],
+            album_pt,
             **kwargs
         )
 
@@ -92,13 +93,17 @@ class Album:
 
         tracks = []
         for track in response["tracks"]["items"]:
-            tracks.append(Track.from_response(track))
+            tracks.append(Track.from_response(track, None))
 
         album = Album(response["id"],
                       response["name"],
                       tracks,
                       response["images"][0]["url"],
                       album_artists)
+
+        for i in range(len(album.tracks)):
+            album.tracks[i].album_pt = album
+
         return album
 
 
@@ -118,7 +123,8 @@ class Playlist:
         name = response["name"]
         tracks = []
         for track in response["tracks"]["items"]:
-            tracks.append(Track.from_response(track["track"]))
+            album = Album.from_response(track["track"]["album"])
+            tracks.append(Track.from_response(track["track"]), album)
         return Playlist(id, name, tracks)
 
 
@@ -150,4 +156,8 @@ class SpotifyAPI:
         return Track.from_response(self.spotify.track(id))
 
     def get_currently_playing_track(self) -> Track:
-        return Track.from_response(self.spotify.currently_playing()["item"])
+        track = None
+        while track is None:
+            track = self.spotify.currently_playing()
+            time.sleep(2)
+        return Track.from_response(track["item"])
