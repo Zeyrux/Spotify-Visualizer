@@ -93,10 +93,10 @@ class MusicDownloader:
 
     def download_cur_song(self):
         track = self.spotify_api.get_currently_playing_track()
-        # if not song found exit
+        # if no song found, exit
         if track is None:
             return
-        # if song downloaded exit
+        # if song downloaded, exit
         if self.controller.is_existing("Song", track.id):
             return
         # search for track

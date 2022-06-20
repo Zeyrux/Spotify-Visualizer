@@ -96,6 +96,11 @@ class MusicController:
             song_id, song_name, artists, duration_ms, album_id
         )
 
+    def is_existing(self, table: str, id: str) -> bool:
+        self.cursor.execute(f"SELECT * FROM {table} WHERE id = {id}")
+        print(self.cursor.fetchone())
+        print()
+
     def get_playlist(self, playlist_id: str) -> Playlist:
         self.cursor.execute(f"SELECT name FROM Playlist "
                             f"WHERE id = {playlist_id}")

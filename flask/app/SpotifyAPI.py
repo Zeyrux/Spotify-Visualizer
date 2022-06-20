@@ -58,7 +58,8 @@ class Track:
             response["id"],
             response["name"],
             artists,
-            response["duration_ms"]
+            response["duration_ms"],
+            response["album"]["id"]
         )
 
     def album(self, controller: "MusicController"):
