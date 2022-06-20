@@ -1,7 +1,7 @@
 import time
 from pathlib import Path
 
-from app.SpotifyAPI import Artist, Album, Track
+from app.SpotifyAPI import Artist, Album, Playlist, Track
 
 from mysql import connector
 from mysql.connector import connection_cext
@@ -73,21 +73,11 @@ class MusicController:
         self.connection = connector.connect(**config)
         self.cursor = self.connection.cursor()
 
-    def is_existing(self, table: str, id: str) -> bool:
-        self.cursor.execute(
-            f"SELECT * FROM {table} WHERE id = '{id}'"
-        )
-        for _ in self.cursor:
-            self.cursor.reset()
-            return True
-        return False
-
-    def _get_song_track_from_db(self, song_id) -> Track:
+    def _get_song_from_db(self, song_id) -> Track:
         # song
-        self.cursor.execute(f"SELECT name, id_album, date_played, cnt_played "
+        self.cursor.execute(f"SELECT name, id_album, duration_ms"
                             f"FROM Song WHERE id = '{song_id}'")
-        for song in self.cursor:
-            song_name, id_album, date_played, cnt_played = song
+        song_name, album_id, duration_ms = self.cursor.fetchone()
         self.cursor.reset()
 
         # song artists
@@ -96,105 +86,140 @@ class MusicController:
                             f"WHERE id_song = '{song_id}'")
         for artist_id in self.cursor:
             self.cursor.reset()
-            self.cursor.execute(f"SELECT * FROM Artist "
+            self.cursor.execute(f"SELECT name FROM Artist "
                                 f"WHERE id = '{artist_id[0]}'")
-            for artist in self.cursor:
-                self.cursor.reset()
-                artists.append(Artist(artist[0], artist[1]))
-
-        # album
-        self.cursor.execute(f"SELECT * FROM Album "
-                            f"WHERE id = '{id_album}'")
-        for album in self.cursor:
+            artist = self.cursor.fetchone()
+            artists.append(Artist(artist[0], artist[1]))
             self.cursor.reset()
-            album_id, album_name, album_img_url = album
+
+        return Track(
+            song_id, song_name, artists, duration_ms, album_id
+        )
+
+    def get_playlist(self, playlist_id: str) -> Playlist:
+        self.cursor.execute(f"SELECT name FROM Playlist "
+                            f"WHERE id = {playlist_id}")
+        playlist_name, = self.cursor.fetchone()
+
+        # songs
+        songs = []
+        self.cursor.execute(f"SELECT id_song FROM Playlist "
+                            f"WHERE id_playlist = {playlist_id}")
+        for song_id in self.cursor:
+            songs.append(self._get_song_from_db(song_id))
+        self.cursor.reset()
+
+        return Playlist(playlist_id, playlist_name, songs)
+
+    def get_album(self, album_id: str) -> Album:
+        self.cursor.execute(f"SELECT name, image_url FROM Album "
+                            f"WHERE id = {album_id}")
+        album_name, album_img_url = self.cursor.fetchone()
+        self.cursor.reset()
 
         # album artists
         album_artists = []
         self.cursor.execute(f"SELECT id_artist FROM AlbumArtists "
-                            f"WHERE id_album = '{id_album}'")
+                            f"WHERE id_album = '{album_id}'")
         for album_artist_id in self.cursor:
             self.cursor.reset()
             self.cursor.execute(f"SELECT * FROM Artist "
                                 f"WHERE id = '{album_artist_id}'")
-            for album_artist in self.cursor:
-                self.cursor.reset()
-                album_artists.append(Artist(album_artist[0], album_artist[1]))
+            album_artist = self.cursor.fetchone()
+            album_artists.append(Artist(album_artist[0], album_artist[1]))
+            self.cursor.reset()
 
-        album = Album(album_id, album_name, album_img_url, album_artists)
-        return Track(
-            song_id, song_name, artists, 0, album, 0, date_played, cnt_played
+        # songs
+        songs = []
+        self.cursor.execute(f"SELECT id FROM Song WHERE id_album = {album_id}")
+        for song_id in self.cursor:
+            songs.append(self._get_song_from_db(song_id))
+        self.cursor.reset()
+
+        return Album(
+            album_id, album_name, songs, album_img_url, album_artists
         )
 
     def get_random_song(self) -> Track:
         self.cursor.execute(f"SELECT id FROM Song ORDER BY RAND()")
         for track_id in self.cursor:
             self.cursor.reset()
-            return self._get_song_track_from_db(track_id[0])
+            return self._get_song_from_db(track_id[0])
         self.cursor.reset()
 
         # if not song exists in database, wait until one is added
         time.sleep(2)
         return self.get_random_song()
 
-    def save_song(self, track: Track):
+    def save_song(self, track: Track, add_future_tracks=False):
         # refresh cur, last track
-        self.tracks.add_future_track(track)
+        if add_future_tracks:
+            self.tracks.add_future_track(track)
 
         # insert artists of song
         for artist in track.artists:
-            if not self.is_existing("Artist", artist.id):
-                artist_name = artist.name.replace("'", "\\'")
-                sql = f"INSERT INTO Artist (id, name) VALUES " \
-                      f"('{artist.id}', '{artist_name}')"
-                self.cursor.execute(sql)
-                self.cursor.reset()
-
-        # insert album
-        if not self.is_existing("Album", track.album.id):
-            album_name = track.album.name.replace("'", "\\'")
-            sql = f"INSERT INTO Album (id, name, image_url) VALUES " \
-                  f"('{track.album.id}', '{album_name}', " \
-                  f"'{track.album.image_url}')"
+            artist_name = artist.name.replace("'", "\\'")
+            sql = f"INSERT IGNORE INTO Artist (id, name) VALUES " \
+                  f"('{artist.id}', '{artist_name}')"
             self.cursor.execute(sql)
             self.cursor.reset()
 
         # insert song
-        if not self.is_existing("Song", track.id):
-            track_name = track.name.replace("'", "\\'")
-            sql = f"INSERT INTO Song" \
-                  f" (id, name, id_album, date_played, cnt_played) VALUES " \
-                  f"('{track.id}', '{track_name}', '{track.album.id}', " \
-                  f"'{track.date_played}', '{track.cnt_played}')"
+        track_name = track.name.replace("'", "\\'")
+        sql = f"INSERT IGNORE INTO Song " \
+              f"(id, name, id_album, duration_ms) VALUES " \
+              f"('{track.id}', '{track_name}', '{track.id_album}')"
+        self.cursor.execute(sql)
+        self.cursor.reset()
+
+        # link song to artists
+        for artist in track.artists:
+            sql = f"INSERT IGNORE INTO SongArtists (id_song, id_artist) " \
+                  f"VALUES ('{track.id}', '{artist.id}')"
             self.cursor.execute(sql)
             self.cursor.reset()
 
-        # link song to artists
-        if not (self.is_existing("Song", track.id)
-                and self.is_existing("Artist", track.artists[0].id)):
-            for artist in track.artists:
-                sql = f"INSERT INTO SongArtists (id_song, id_artist) VALUES " \
-                      f"('{track.id}', '{artist.id}')"
-                self.cursor.execute(sql)
-                self.cursor.reset()
+        self.connection.commit()
+
+    def save_album(self, album: Album):
+        # insert album
+        album_name = album.name.replace("'", "\\'")
+        sql = f"INSERT IGNORE INTO Album (id, name, image_url) VALUES " \
+              f"('{album.id}', '{album_name}', '{album.image_url}')"
+        self.cursor.execute(sql)
+        self.cursor.reset()
 
         # insert artists of album
-        for artist in track.album.artists:
-            if not self.is_existing("Artist", artist.id):
-                artist_name = artist.name.replace("'", "\\'")
-                sql = f"INSERT INTO Artist (id, name) VALUES " \
-                      f"('{artist.id}', '{artist_name}')"
-                self.cursor.execute(sql)
-                self.cursor.reset()
+        for artist in album.artists:
+            artist_name = artist.name.replace("'", "\\'")
+            sql = f"INSERT IGNORE INTO Artist (id, name) VALUES " \
+                  f"('{artist.id}', '{artist_name}')"
+            self.cursor.execute(sql)
+            self.cursor.reset()
 
         # link album to artists
-        if not (self.is_existing("Album", track.album.id)
-                and self.is_existing("Artist", track.album.artists[0].id)):
-            for artist in track.album.artists:
-                sql = f"INSERT INTO AlbumArtists (id_album, id_artist) " \
-                      f"VALUES ('{track.album.id}', '{artist.id}')"
-                self.cursor.execute(sql)
-                self.cursor.reset()
+        for artist in album.artists:
+            sql = f"INSERT IGNORE INTO AlbumArtists (id_album, id_artist) " \
+                  f"VALUES ('{album.id}', '{artist.id}')"
+            self.cursor.execute(sql)
+            self.cursor.reset()
+
+        self.connection.commit()
+
+    def save_playlist(self, playlist: Playlist):
+        # insert playlist
+        playlist_name = playlist.name.replace("'", "\\'")
+        sql = f"INSERT IGNORE INTO Playlist (id, name) " \
+              f"VALUES ('{playlist.id}', '{playlist_name}'"
+        self.cursor.execute(sql)
+        self.cursor.reset()
+
+        # link playlist tracks
+        for track in playlist.tracks:
+            sql = f"INSERT IGNORE INTO SongPlaylist (id_song, id_playlist) " \
+                  f"VALUES ('{track.id}', '{playlist.id}')"
+            self.cursor.execute(sql)
+            self.cursor.reset()
 
         self.connection.commit()
 
@@ -217,7 +242,7 @@ class MusicController:
         for track_id in self.cursor:
             self.cursor.reset()
             self.tracks.add_future_track(
-                self._get_song_track_from_db(track_id[0])
+                self._get_song_from_db(track_id[0])
             )
             return self.tracks.get_future_song()
         self.cursor.reset()
@@ -230,7 +255,7 @@ class MusicController:
             for track_id in self.cursor:
                 self.cursor.reset()
                 self.tracks.add_future_track(
-                    self._get_song_track_from_db(track_id[0])
+                    self._get_song_from_db(track_id[0])
                 )
                 return self.tracks.get_future_song()
             self.cursor.reset()

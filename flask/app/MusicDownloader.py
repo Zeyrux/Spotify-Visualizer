@@ -109,7 +109,7 @@ class MusicDownloader:
         self._add_thumbnail(path_song, track)
         self._add_song_data(path_song, track)
         # add song data to database
-        self.controller.save_song(track)
+        self.controller.save_song(track, True)
         print("Downloaded:", track.filename)
 
     def start(self, token_info: dict):

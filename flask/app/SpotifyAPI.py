@@ -1,12 +1,6 @@
-import base64
-import datetime
-from json.decoder import JSONDecodeError
 import time
 from dataclasses import dataclass, field
-from urllib.parse import urlencode
 
-import requests
-import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy import Spotify
 
@@ -38,8 +32,7 @@ class Track:
     name: str
     artists: list[Artist]
     duration_ms: int
-    date_played: datetime.date = datetime.date.today()
-    cnt_played: int = 0
+    id_album: str
     duration_s: int = field(init=False)
     id_filename: str = field(init=False)
     filename: str = field(init=False)
@@ -56,21 +49,23 @@ class Track:
         return True if other.id == self.id else False
 
     @staticmethod
-    def from_response(response: dict, album_pt: "Album" | None = None):
+    def from_response(response: dict):
         artists = []
         for artist in response["artists"]:
             artists.append(Artist(artist["id"], artist["name"]))
-        kwargs = {"progress_ms": response["progress_ms"]} \
-            if "progress_ms" in response.values() else {}
 
         return Track(
             response["id"],
             response["name"],
             artists,
-            response["duration_ms"],
-            album_pt,
-            **kwargs
+            response["duration_ms"]
         )
+
+    def album(self, controller: "MusicController"):
+        return controller.get_album()
+
+    def playlists(self, controller: "MusicController"):
+        pass
 
 
 @dataclass
@@ -93,16 +88,13 @@ class Album:
 
         tracks = []
         for track in response["tracks"]["items"]:
-            tracks.append(Track.from_response(track, None))
+            tracks.append(Track.from_response(track))
 
         album = Album(response["id"],
                       response["name"],
                       tracks,
                       response["images"][0]["url"],
                       album_artists)
-
-        for i in range(len(album.tracks)):
-            album.tracks[i].album_pt = album
 
         return album
 
@@ -123,8 +115,7 @@ class Playlist:
         name = response["name"]
         tracks = []
         for track in response["tracks"]["items"]:
-            album = Album.from_response(track["track"]["album"])
-            tracks.append(Track.from_response(track["track"]), album)
+            tracks.append(Track.from_response(track["track"]))
         return Playlist(id, name, tracks)
 
 
