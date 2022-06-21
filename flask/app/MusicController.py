@@ -60,6 +60,7 @@ class MusicController:
 
         self.connection: connection_cext.CMySQLConnection | None = None
         self.cursor: connection_cext.CMySQLCursor | None = None
+        self.spotify_api: "SpotifyAPI" | None = None
 
     def connect(self):
         config = {
@@ -75,8 +76,9 @@ class MusicController:
 
     def _get_song_from_db(self, song_id) -> Track:
         # song
-        self.cursor.execute(f"SELECT name, id_album, duration_ms"
-                            f"FROM Song WHERE id = '{song_id}'")
+        sql = f"SELECT name, id_album, duration_ms " \
+              f"FROM Song WHERE id = '{song_id}'"
+        self.cursor.execute(sql)
         song_name, album_id, duration_ms = self.cursor.fetchone()
         self.cursor.reset()
 
@@ -88,8 +90,8 @@ class MusicController:
             self.cursor.reset()
             self.cursor.execute(f"SELECT name FROM Artist "
                                 f"WHERE id = '{artist_id[0]}'")
-            artist = self.cursor.fetchone()
-            artists.append(Artist(artist[0], artist[1]))
+            artist_name = self.cursor.fetchone()[0]
+            artists.append(Artist(artist_id, artist_name))
             self.cursor.reset()
 
         return Track(
@@ -103,6 +105,10 @@ class MusicController:
         return exists
 
     def get_playlist(self, playlist_id: str) -> Playlist:
+        if not self.is_existing("Playlist", playlist_id):
+            playlist = self.spotify_api.get_playlist(playlist_id)
+            self.save_playlist(playlist)
+
         self.cursor.execute(f"SELECT name FROM Playlist "
                             f"WHERE id = '{playlist_id}'")
         playlist_name, = self.cursor.fetchone()
@@ -118,6 +124,9 @@ class MusicController:
         return Playlist(playlist_id, playlist_name, songs)
 
     def get_album(self, album_id: str) -> Album:
+        if not self.is_existing("Album", album_id):
+            album = self.spotify_api.get_album(album_id)
+            self.save_album(album)
         self.cursor.execute(f"SELECT name, image_url FROM Album "
                             f"WHERE id = '{album_id}'")
         album_name, album_img_url = self.cursor.fetchone()
@@ -129,8 +138,8 @@ class MusicController:
                             f"WHERE id_album = '{album_id}'")
         for album_artist_id in self.cursor:
             self.cursor.reset()
-            self.cursor.execute(f"SELECT * FROM Artist "
-                                f"WHERE id = '{album_artist_id}'")
+            sql = f"SELECT * FROM Artist WHERE id = '{album_artist_id[0]}'"
+            self.cursor.execute(sql)
             album_artist = self.cursor.fetchone()
             album_artists.append(Artist(album_artist[0], album_artist[1]))
             self.cursor.reset()
@@ -184,7 +193,8 @@ class MusicController:
         track_name = track.name.replace("'", "\\'")
         sql = f"INSERT IGNORE INTO Song " \
               f"(id, name, id_album, duration_ms) VALUES " \
-              f"('{track.id}', '{track_name}', '{track.id_album}')"
+              f"('{track.id}', '{track_name}', " \
+              f"'{track.id_album}', '{track.duration_ms}')"
         self.cursor.execute(sql)
         self.cursor.reset()
 

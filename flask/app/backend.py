@@ -39,6 +39,7 @@ music_downloader = MusicDownloader(
     music_controller, DATABASE_DIR,
     KEYS_DIR, "http://localhost:5000/save_login"
 )
+music_controller.spotify_api = music_downloader.spotify_api
 
 default_controller = '{"loop_active": false, "fps": 60, "volume": 0.20}'
 

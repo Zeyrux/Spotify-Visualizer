@@ -84,9 +84,9 @@ class MusicDownloader:
             file.initTag()
 
         file.tag.artist = "; ".join([str(artist) for artist in track.artists])
-        file.tag.album = track.album.name
+        file.tag.album = track.album(self.controller).name
         file.tag.album_artist = "; ".join(
-            [str(artist) for artist in track.album.artists]
+            [str(artist) for artist in track.album(self.controller).artists]
         )
         file.tag.title = track.name
         file.tag.save()

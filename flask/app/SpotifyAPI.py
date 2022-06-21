@@ -52,17 +52,19 @@ class Track:
         return True if other.id == self.id else False
 
     @staticmethod
-    def from_response(response: dict):
+    def from_response(response: dict, album_id: str = None):
         artists = []
         for artist in response["artists"]:
             artists.append(Artist(artist["id"], artist["name"]))
+
+        album_id = response["album"]["id"] if album_id is None else album_id
 
         return Track(
             response["id"],
             response["name"],
             artists,
             response["duration_ms"],
-            response["album"]["id"]
+            album_id
         )
 
     def album(self, controller: "MusicController") -> "Album":
@@ -96,7 +98,7 @@ class Album:
 
         tracks = []
         for track in response["tracks"]["items"]:
-            tracks.append(Track.from_response(track))
+            tracks.append(Track.from_response(track, response["id"]))
 
         album = Album(response["id"],
                       response["name"],
