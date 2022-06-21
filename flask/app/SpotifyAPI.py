@@ -34,6 +34,8 @@ class Track:
     artists: list[Artist]
     duration_ms: int
     id_album: str
+    album_obj: "Album" = None
+    playlists_obj: list["Playlist"] = None
     duration_s: int = field(init=False)
     id_filename: str = field(init=False)
     filename: str = field(init=False)
@@ -64,10 +66,14 @@ class Track:
         )
 
     def album(self, controller: "MusicController") -> "Album":
-        return controller.get_album(self.id_album)
+        if self.album_obj is None:
+            self.album_obj = controller.get_album(self.id_album)
+        return self.album_obj
 
     def playlists(self, controller: "MusicController") -> list["Playlist"]:
-        return controller.get_playlist_with_track(self.id)
+        if self.playlists_obj is None:
+            self.playlists_obj = controller.get_playlists_with_track(self.id)
+        return self.playlists_obj
 
 
 @dataclass

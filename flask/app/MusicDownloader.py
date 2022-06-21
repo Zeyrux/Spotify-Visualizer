@@ -66,7 +66,7 @@ class MusicDownloader:
     def _add_thumbnail(self, path_song: str, track: "Track"):
         thumbnail_path = path_song[:path_song.rindex(".")] + "thumbnail.jpeg"
         # get thumbnail
-        urlretrieve(track.album.image_url, thumbnail_path)
+        urlretrieve(track.album(self.controller).image_url, thumbnail_path)
 
         # add thumbnail
         file = eyed3.load(path_song)
