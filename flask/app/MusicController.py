@@ -24,7 +24,6 @@ class Tracks:
 
     def get_future_song(self) -> Track:
         self.cur_track += 1
-        print(self.tracks[self.cur_track])
         return self.tracks[self.cur_track]
 
     def add_last_track(self, track: Track):
@@ -91,7 +90,7 @@ class MusicController:
             self.cursor.execute(f"SELECT name FROM Artist "
                                 f"WHERE id = '{artist_id[0]}'")
             artist_name = self.cursor.fetchone()[0]
-            artists.append(Artist(artist_id, artist_name))
+            artists.append(Artist(artist_id[0], artist_name))
             self.cursor.reset()
 
         return Track(
@@ -149,7 +148,7 @@ class MusicController:
         self.cursor.execute(f"SELECT id FROM Song "
                             f"WHERE id_album = '{album_id}'")
         for song_id in self.cursor:
-            songs.append(self._get_song_from_db(song_id))
+            songs.append(self._get_song_from_db(song_id[0]))
         self.cursor.reset()
 
         return Album(
@@ -263,7 +262,7 @@ class MusicController:
 
         # get song by album
         self.cursor.execute(f"SELECT id FROM Song "
-                            f"WHERE id_album = '{cur_track.album.id}' "
+                            f"WHERE id_album = '{cur_track.album(self).id}' "
                             f"AND id != '{cur_track.id}'")
         for track_id in self.cursor:
             self.cursor.reset()
@@ -275,9 +274,9 @@ class MusicController:
 
         # get song by artist
         for artist in cur_track.artists:
-            self.cursor.execute(f"SELECT id_song FROM SongArtists "
-                                f"WHERE id_artist = '{artist.id}' "
-                                f"AND id_song != '{cur_track.id}'")
+            sql = f"SELECT id_song FROM SongArtists WHERE " \
+                  f"id_artist = '{artist.id}' AND id_song != '{cur_track.id}'"
+            self.cursor.execute(sql)
             for track_id in self.cursor:
                 self.cursor.reset()
                 self.tracks.add_future_track(

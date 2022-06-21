@@ -73,6 +73,11 @@ def save_login():
     return redirect(url_for("visualizer"))
 
 
+@app.route("/add_playlist", methods=["POST"])
+def add_playlist():
+    return "Hallo"
+
+
 @app.route("/visualizer", methods=["GET"])
 def visualizer():
     if not session.get("token_info", None):
