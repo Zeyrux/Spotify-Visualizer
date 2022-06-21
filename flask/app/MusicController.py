@@ -97,19 +97,20 @@ class MusicController:
         )
 
     def is_existing(self, table: str, id: str) -> bool:
-        self.cursor.execute(f"SELECT * FROM {table} WHERE id = {id}")
-        print(self.cursor.fetchone())
-        print()
+        self.cursor.execute(f"SELECT * FROM {table} WHERE id = '{id}'")
+        exists = False if self.cursor.fetchone() is None else True
+        self.cursor.reset()
+        return exists
 
     def get_playlist(self, playlist_id: str) -> Playlist:
         self.cursor.execute(f"SELECT name FROM Playlist "
-                            f"WHERE id = {playlist_id}")
+                            f"WHERE id = '{playlist_id}'")
         playlist_name, = self.cursor.fetchone()
 
         # songs
         songs = []
         self.cursor.execute(f"SELECT id_song FROM Playlist "
-                            f"WHERE id_playlist = {playlist_id}")
+                            f"WHERE id_playlist = '{playlist_id}'")
         for song_id in self.cursor:
             songs.append(self._get_song_from_db(song_id))
         self.cursor.reset()
@@ -118,7 +119,7 @@ class MusicController:
 
     def get_album(self, album_id: str) -> Album:
         self.cursor.execute(f"SELECT name, image_url FROM Album "
-                            f"WHERE id = {album_id}")
+                            f"WHERE id = '{album_id}'")
         album_name, album_img_url = self.cursor.fetchone()
         self.cursor.reset()
 
@@ -136,7 +137,8 @@ class MusicController:
 
         # songs
         songs = []
-        self.cursor.execute(f"SELECT id FROM Song WHERE id_album = {album_id}")
+        self.cursor.execute(f"SELECT id FROM Song "
+                            f"WHERE id_album = '{album_id}'")
         for song_id in self.cursor:
             songs.append(self._get_song_from_db(song_id))
         self.cursor.reset()
@@ -144,6 +146,15 @@ class MusicController:
         return Album(
             album_id, album_name, songs, album_img_url, album_artists
         )
+
+    def get_playlists_with_track(self, track_id: str) -> list[Playlist]:
+        sql = f"SELECT id_playlist FROM SongPlaylist " \
+              f"WHERE id_song = '{track_id}'"
+        self.cursor.execute(sql)
+        playlists = []
+        for playlist_id in self.cursor:
+            playlists.append(self.get_playlist(playlist_id))
+        return playlists
 
     def get_random_song(self) -> Track:
         self.cursor.execute(f"SELECT id FROM Song ORDER BY RAND()")

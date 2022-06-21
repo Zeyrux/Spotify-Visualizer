@@ -1,4 +1,5 @@
 import time
+import random
 from dataclasses import dataclass, field
 
 from spotipy.oauth2 import SpotifyOAuth
@@ -62,11 +63,11 @@ class Track:
             response["album"]["id"]
         )
 
-    def album(self, controller: "MusicController"):
-        return controller.get_album()
+    def album(self, controller: "MusicController") -> "Album":
+        return controller.get_album(self.id_album)
 
-    def playlists(self, controller: "MusicController"):
-        pass
+    def playlists(self, controller: "MusicController") -> list["Playlist"]:
+        return controller.get_playlist_with_track(self.id)
 
 
 @dataclass
@@ -146,6 +147,35 @@ class SpotifyAPI:
 
     def get_track(self, id: str) -> Track:
         return Track.from_response(self.spotify.track(id))
+
+    def _get_recommendation(self, tracks: list[Track],
+                            cnt_recommendations: int):
+        recommendations = []
+        for _ in range(cnt_recommendations):
+            if len(tracks) < cnt_recommendations:
+                q_tracks = random.choices(tracks,
+                                          k=cnt_recommendations)
+            else:
+                q_tracks = random.sample(tracks,
+                                         cnt_recommendations)
+                recommendations.append(self.get_recommendation(q_tracks))
+        return recommendations
+
+    def get_recommendation(self, tracks: list[Track]) -> Track:
+        seed_tracks = [track.id for track in tracks]
+        return Track.from_response(
+            self.spotify.recommendations(seed_tracks=seed_tracks, limit=1)
+        )
+
+    def get_recommendations_for_playlist(
+            self, playlist: Playlist, cnt_recommendations: int
+    ) -> list[Track]:
+        return self._get_recommendation(playlist.tracks, cnt_recommendations)
+
+    def get_recommendations_for_album(
+            self, album: Album, cnt_recommendations: int
+    ) -> list[Track]:
+        return self._get_recommendation(album.tracks, cnt_recommendations)
 
     def get_currently_playing_track(self) -> Track:
         track = None
