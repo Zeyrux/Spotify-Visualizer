@@ -1,5 +1,6 @@
 import time
 import random
+import json
 from dataclasses import dataclass, field
 
 from spotipy.oauth2 import SpotifyOAuth
@@ -84,7 +85,7 @@ class Track:
 
     def playlists(self, controller: "MusicController") -> list["Playlist"]:
         if self.playlists_obj is None:
-            self.playlists_obj = controller.get_playlists_with_track(self.id)
+            self.playlists_obj = controller.get_playlists_from_track(self.id)
         return self.playlists_obj
 
 
@@ -118,6 +119,12 @@ class Album:
 
         return album
 
+    def as_dict(self) -> dict:
+        return {
+            "id": self.id, "name": self.name,
+            "tracks": [track.to_dict() for track in self.tracks]
+        }
+
 
 @dataclass
 class Playlist:
@@ -146,13 +153,15 @@ class Playlist:
 
 
 class SpotifyAPI:
-    def __init__(self, client_id: str, client_secret: str, redirect_uri: str):
+    def __init__(self, client_id: str, client_secret: str,
+                 redirect_uri: str, controller_pt: "MusicController"):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
+        self.controller = controller_pt
         self.spotify: Spotify | None = None
 
-        self.user_playlist: list[Playlist] | None = None
+        self.user_playlists: list[Playlist] | None = None
 
     def get_oauth(self) -> SpotifyOAuth:
         return SpotifyOAuth(client_id=self.client_id,
@@ -207,13 +216,19 @@ class SpotifyAPI:
         response = self.spotify.current_user_playlists()
         playlists = []
         for playlist in response["items"]:
-            playlists.append(self.get_playlist(playlist["id"]))
+            playlist = self.get_playlist(playlist["id"])
+            self.controller.save_playlist(playlist)
+            playlists.append(playlist)
         return playlists
 
-    def get_user_playlists(self) -> list[Playlist]:
-        if self.user_playlist is None:
-            self.user_playlist = self._get_user_playlists()
-        return self.user_playlist
+    def get_user_playlists(self, as_str=False) -> list[Playlist] | str:
+        if self.user_playlists is None:
+            self.user_playlists = self._get_user_playlists()
+        if as_str:
+            user_playlists = [playlist.to_dict() for playlist in
+                              self.user_playlists]
+            return json.dumps(user_playlists)
+        return self.user_playlists
 
     def get_currently_playing_track(self) -> Track:
         track = None

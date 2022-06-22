@@ -6,7 +6,6 @@ for (let i = 0; i < user_playlists.length; i++) {
     user_playlists[i] = new Playlist(user_playlists[i]);
     
 }
-console.log(user_playlists);
 
 
 function init() {

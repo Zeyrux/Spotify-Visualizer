@@ -126,7 +126,7 @@ export function create_slider_duration(duration) {
         document.getElementById("audio").currentTime = e.target.value;
     });
 
-    let label = document.createElement("label");
+    let label = document.createElement("p");
     label.id = "duration_label";
     label.innerHTML = seconds_to_string(0);
 
@@ -146,7 +146,6 @@ export function create_slider_volume(start) {
         let small = document.getElementById("volume_slider_small").value;
         let volume = parseFloat(huge) + parseFloat(small);
         controller["volume"] = volume;
-        console.log(JSON.stringify(controller));
         document.getElementById("audio").volume = volume;
         document.getElementById("volume_label").innerHTML = parseFloat(volume).toFixed(3) + "🔈";
     }
@@ -161,7 +160,7 @@ export function create_slider_volume(start) {
     div_slider.appendChild(slider_small);
 
     // create label
-    let label = document.createElement("label");
+    let label = document.createElement("p");
     label.id = "volume_label";
     label.innerHTML = parseFloat(start).toFixed(3) + "🔈";
 
@@ -191,12 +190,24 @@ export function create_fps() {
 
 
 export function create_user_playlists() {
-    let div = document.getElementById("user_playlists");
+    let div = document.createElement("div");
     
+    // create playlists
     user_playlists.forEach(playlist => {
         // create text
         let p = document.createElement("p");
         p.innerHTML = playlist.name;
         div.appendChild(p);
     });
+
+    // create tracks
+    return div
+}
+
+
+export function create_user_tracks() {
+    let div = document.createElement("div");
+    div.innerHTML = "hallo";
+    div.id = "tracks";
+    return div;
 }

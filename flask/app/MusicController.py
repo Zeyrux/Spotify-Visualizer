@@ -126,6 +126,7 @@ class MusicController:
         if not self.is_existing("Album", album_id):
             album = self.spotify_api.get_album(album_id)
             self.save_album(album)
+
         self.cursor.execute(f"SELECT name, image_url FROM Album "
                             f"WHERE id = '{album_id}'")
         album_name, album_img_url = self.cursor.fetchone()
@@ -155,7 +156,11 @@ class MusicController:
             album_id, album_name, songs, album_img_url, album_artists
         )
 
-    def get_playlists_with_track(self, track_id: str) -> list[Playlist]:
+    def get_playlists_from_track(self, track_id: str) -> list[Playlist]:
+        if not self.is_existing("Song", track_id):
+            track = self.spotify_api.get_track(track_id)
+            self.save_song(track)
+
         sql = f"SELECT id_playlist FROM SongPlaylist " \
               f"WHERE id_song = '{track_id}'"
         self.cursor.execute(sql)
@@ -214,20 +219,23 @@ class MusicController:
         self.cursor.execute(sql)
         self.cursor.reset()
 
-        # insert artists of album
         for artist in album.artists:
+            # insert artists of album
             artist_name = artist.name.replace("'", "\\'")
             sql = f"INSERT IGNORE INTO Artist (id, name) VALUES " \
                   f"('{artist.id}', '{artist_name}')"
             self.cursor.execute(sql)
             self.cursor.reset()
 
-        # link album to artists
-        for artist in album.artists:
+            # link album to artists
             sql = f"INSERT IGNORE INTO AlbumArtists (id_album, id_artist) " \
                   f"VALUES ('{album.id}', '{artist.id}')"
             self.cursor.execute(sql)
             self.cursor.reset()
+
+        # add songs
+        for track in album.tracks:
+            self.save_song(track)
 
         self.connection.commit()
 
@@ -235,12 +243,15 @@ class MusicController:
         # insert playlist
         playlist_name = playlist.name.replace("'", "\\'")
         sql = f"INSERT IGNORE INTO Playlist (id, name) " \
-              f"VALUES ('{playlist.id}', '{playlist_name}'"
+              f"VALUES ('{playlist.id}', '{playlist_name}')"
         self.cursor.execute(sql)
         self.cursor.reset()
 
         # link playlist tracks
         for track in playlist.tracks:
+            # add song
+            self.save_song(track)
+            # link song and playlist
             sql = f"INSERT IGNORE INTO SongPlaylist (id_song, id_playlist) " \
                   f"VALUES ('{track.id}', '{playlist.id}')"
             self.cursor.execute(sql)

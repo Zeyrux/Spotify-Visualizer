@@ -32,7 +32,8 @@ class MusicDownloader:
 
         # api´s
         self.spotify_api = SpotifyAPI(
-            get_clt_id(keys_dir), get_clt_secret(keys_dir), redirect_url
+            get_clt_id(keys_dir), get_clt_secret(keys_dir),
+            redirect_url, self.controller
         )
         self.youtube_api = YoutubeAPI(
             YoutubeAppsBuilder(os.path.join(keys_dir, "youtube.txt"))

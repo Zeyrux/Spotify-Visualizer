@@ -90,9 +90,7 @@ def visualizer():
         else music_controller.get_song()
 
     file_path = os.path.join(*DATABASE_DIR.parts[1:], track.id_filename)
-    user_playlists = music_controller.spotify_api.get_user_playlists()
-    user_playlists = [playlist.to_dict() for playlist in user_playlists]
-    user_playlists = json.dumps(user_playlists)
+    user_playlists = music_controller.spotify_api.get_user_playlists(True)
     return render_template(
         "visualizer.html", file_path=file_path,
         song_name=track.name, controller=controller,
