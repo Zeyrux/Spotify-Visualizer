@@ -100,7 +100,10 @@ function animate(){
 	ctx.fill();
 
     // text
-	ctx.font = radius / 4+ "px serif";
+	let font_size = radius / 4;
+	if (font_size < 20)
+		font_size = 20;
+	ctx.font = font_size + "px serif";
 	ctx.textBaseline = "middle";
 	ctx.strokeText(songname, canvas.width / 2 - Math.round(ctx.measureText(songname).width) / 2, canvas.height * 0.35);
 }

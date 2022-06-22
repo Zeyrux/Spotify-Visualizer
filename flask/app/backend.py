@@ -1,5 +1,6 @@
 import os
 import secrets
+import json
 from pathlib import Path
 
 from app.MusicDownloader import MusicDownloader
@@ -87,8 +88,13 @@ def visualizer():
         else default_controller
     track = music_controller.get_last_song() if "back" in request.args \
         else music_controller.get_song()
+
     file_path = os.path.join(*DATABASE_DIR.parts[1:], track.id_filename)
+    user_playlists = music_controller.spotify_api.get_user_playlists()
+    user_playlists = [playlist.to_dict() for playlist in user_playlists]
+    user_playlists = json.dumps(user_playlists)
     return render_template(
         "visualizer.html", file_path=file_path,
-        song_name=track.name, controller=controller
+        song_name=track.name, controller=controller,
+        user_playlists=user_playlists
     )

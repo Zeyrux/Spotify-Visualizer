@@ -26,6 +26,9 @@ class Artist:
     def __str__(self):
         return self.name
 
+    def to_dict(self) -> dict:
+        return {"id": self.id, "name": self.name}
+
 
 @dataclass
 class Track:
@@ -66,6 +69,13 @@ class Track:
             response["duration_ms"],
             album_id
         )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id, "name": self.name,
+            "artists": [artist.to_dict() for artist in self.artists],
+            "duration_ms": self.duration_ms
+        }
 
     def album(self, controller: "MusicController") -> "Album":
         if self.album_obj is None:
@@ -128,6 +138,12 @@ class Playlist:
             tracks.append(Track.from_response(track["track"]))
         return Playlist(id, name, tracks)
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id, "name": self.name,
+            "tracks": [track.to_dict() for track in self.tracks]
+        }
+
 
 class SpotifyAPI:
     def __init__(self, client_id: str, client_secret: str, redirect_uri: str):
@@ -135,6 +151,8 @@ class SpotifyAPI:
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
         self.spotify: Spotify | None = None
+
+        self.user_playlist: list[Playlist] | None = None
 
     def get_oauth(self) -> SpotifyOAuth:
         return SpotifyOAuth(client_id=self.client_id,
@@ -184,6 +202,18 @@ class SpotifyAPI:
             self, album: Album, cnt_recommendations: int
     ) -> list[Track]:
         return self._get_recommendation(album.tracks, cnt_recommendations)
+
+    def _get_user_playlists(self) -> list[Playlist]:
+        response = self.spotify.current_user_playlists()
+        playlists = []
+        for playlist in response["items"]:
+            playlists.append(self.get_playlist(playlist["id"]))
+        return playlists
+
+    def get_user_playlists(self) -> list[Playlist]:
+        if self.user_playlist is None:
+            self.user_playlist = self._get_user_playlists()
+        return self.user_playlist
 
     def get_currently_playing_track(self) -> Track:
         track = None
