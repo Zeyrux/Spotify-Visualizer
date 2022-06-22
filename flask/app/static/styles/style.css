@@ -5,8 +5,8 @@ body {
 
 canvas {
     background: linear-gradient(rgb(113, 113, 226), rgb(150, 136, 136));
-    border: 2px solid rgb(58, 58, 58);
-    border-radius: 20px;
+    border: 0.5vh solid rgb(58, 58, 58);
+    border-radius: 5vh;
     top: 50%;
     left: 50%;
     transform: translate(-50%, 0);
@@ -14,7 +14,7 @@ canvas {
 }
 
 #controlls {
-    margin: 30px 0 0 0;
+    margin: 2vh 0 0 0;
     display: flex;
     justify-content: center;
     position: absolute;
@@ -32,26 +32,26 @@ canvas {
 }
 
 #controlls input[type=range], #controlls label {
-    margin: 8px;
+    margin: 1vh;
 }
 
 #controlls input[type=range] {
     appearance: none;
     width: 100%;
-    height: 5px;
+    height: 0.5vh;
     background: rgba(58, 58, 58);
     opacity: 0.25;
-    border: 1px solid rgba(58, 58, 58, 0.25);
-    border-radius: 5px;
+    border: 0.2vh solid rgba(58, 58, 58, 0.25);
+    border-radius: 0.5vh;
     cursor: pointer;
 }
 
 #controlls input[type=range]::-webkit-slider-thumb {
     appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 2.5vh;
+    height: 2.5vh;
     background-color: rgb(60, 84, 203);
-    border-radius: 10px;
+    border-radius: 1vh;
     transition: 500ms;
 }
 
@@ -60,13 +60,13 @@ canvas {
 }
 
 #controlls input[type=submit], #controlls button, #controlls select {
-    font-size: 40px;
+    font-size: 5vh;
     color: rgb(106, 52, 208);
     background: rgb(219, 221, 121);
     border: 3px solid rgb(87, 112, 155);
-    border-radius: 40px;
+    border-radius: 5vh;
     transition: 200ms;
-    margin: 0 7px;
+    margin: 0 1vh;
     cursor: pointer;
     opacity: 0.4;
 }
@@ -85,7 +85,47 @@ canvas {
 }
 
 #controlls select option {
-    font-size: 25px;
-    border: 3px solid rgb(87, 112, 155);
-    border-radius: 25px;
+    font-size: 3vh;
+    border: 1vh solid rgb(87, 112, 155);
+    border-radius: 3vh;
+}
+
+#user_playlists {
+    position: absolute;
+    height: 50vh;
+    width: 20vw;
+    overflow-y: scroll;
+    overflow-x: unset;
+    margin: 20vh 0 5vh 1vw;
+    padding: 1vh 0.1vw 1vh 1vw;
+    box-shadow: inset 0 0 3vh rgba(0, 0, 0, 0.15);
+    border-radius: 3vh 1vh 1vh 3vh;
+    opacity: 0.8;
+    transition: 250ms;
+}
+
+#user_playlists:hover {
+    opacity: 1;
+}
+
+#user_playlists p{
+    margin: 0.5vh 0;
+    font-size: 2.5vh;
+    white-space: nowrap;
+}
+
+#user_playlists::-webkit-scrollbar {
+    width: 1vw;
+}
+
+#user_playlists::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.5);
+    border: 0.1vh solid rgba(65, 85, 189, 0.5);
+    border-radius: 2vh;
+    transition: 500ms;
+}
+
+#user_playlists::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 1);
+    border: 0.1vh solid rgba(65, 85, 189, 1);
 }

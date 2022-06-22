@@ -1,4 +1,4 @@
-import { controller } from "./init.js";
+import { controller, user_playlists } from "./init.js";
 
 export function create_form(form_id, submit_value, create_hidden, hidden_value, hidden_name) {
     // create form
@@ -187,4 +187,16 @@ export function create_fps() {
 
     select.value = controller["fps"];
     return select;
+}
+
+
+export function create_user_playlists() {
+    let div = document.getElementById("user_playlists");
+    
+    user_playlists.forEach(playlist => {
+        // create text
+        let p = document.createElement("p");
+        p.innerHTML = playlist.name;
+        div.appendChild(p);
+    });
 }

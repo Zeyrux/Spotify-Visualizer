@@ -8,6 +8,7 @@
 <body>
     <canvas id="canvas"></canvas>
     <div id="controlls"></div>
+    <div id="user_playlists"></div>
     <audio id="audio" src="{{file_path}}" style="position: absolute;"></audio>
     <script src="{{url_for('static', filename='scritps/tracks.js')}}" type="module"></script>
     <script src="{{url_for('static', filename='scritps/init.js')}}" id="init_script" type="module" controller="{{controller}}" user_playlists="{{user_playlists}}"></script>
