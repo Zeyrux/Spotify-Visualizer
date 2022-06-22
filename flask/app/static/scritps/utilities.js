@@ -191,23 +191,39 @@ export function create_fps() {
 
 export function create_user_playlists() {
     let div = document.createElement("div");
+    div.id = "playlists"
     
     // create playlists
     user_playlists.forEach(playlist => {
         // create text
         let p = document.createElement("p");
         p.innerHTML = playlist.name;
+        p.addEventListener("click", function (e) {
+            document.getElementById(playlist.id).style.display = "inline";
+        });
         div.appendChild(p);
     });
 
-    // create tracks
     return div
 }
 
 
 export function create_user_tracks() {
     let div = document.createElement("div");
-    div.innerHTML = "hallo";
     div.id = "tracks";
+
+    // create tracks
+    user_playlists.forEach(playlist => {
+        let div_track = document.createElement("div");
+        div_track.id = playlist.id;
+        div_track.style.display = "none";
+        playlist.tracks.forEach(track => {
+            let p = document.createElement("p");
+            p.innerHTML = track.name;
+            div_track.appendChild(p);
+        });
+        div.appendChild(div_track);
+    });
+
     return div;
 }

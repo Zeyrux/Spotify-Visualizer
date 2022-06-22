@@ -111,6 +111,7 @@ class MusicController:
         self.cursor.execute(f"SELECT name FROM Playlist "
                             f"WHERE id = '{playlist_id}'")
         playlist_name, = self.cursor.fetchone()
+        self.cursor.reset()
 
         # songs
         songs = []
@@ -167,6 +168,7 @@ class MusicController:
         playlists = []
         for playlist_id in self.cursor:
             playlists.append(self.get_playlist(playlist_id))
+        self.cursor.reset()
         return playlists
 
     def get_random_song(self) -> Track:

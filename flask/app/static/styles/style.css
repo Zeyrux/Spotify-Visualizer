@@ -100,51 +100,64 @@ canvas {
 
 #user_playlists {
     position: absolute;
-    height: 50vh;
-    width: 20vw;
-    overflow-y: scroll;
-    overflow-x: unset;
     margin: 20vh 0 5vh 1vw;
-    padding: 1vh 0.1vw 1vh 1vw;
-    box-shadow: inset 0 0 3vh rgba(0, 0, 0, 0.15);
-    border-radius: 3vh 1vh 1vh 3vh;
-    opacity: 0.8;
-    transition: 250ms;
-    display: flex;
+    height: 50vh;
+    display: inline-flex;
 }
 
-#user_playlists:hover {
+#playlists {
+    width: 20vw;
+    box-shadow: inset 0 0 3vh rgba(0, 0, 0, 0.15);
+    border-radius: 3vh 1vh 1vh 3vh;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#playlists:hover {
     opacity: 1;
 }
 
-#user_playlists p{
+#playlists p{
     margin: 0.5vh 0;
     font-size: 2.5vh;
     white-space: nowrap;
     overflow-x: hidden;
 }
 
-#user_playlists p:hover {
+#playlists p:hover {
     cursor: pointer;
 }
 
-#tracks {
-    position: absolute;
-    margin-left: 20vw;
-}
-
-#user_playlists::-webkit-scrollbar {
+#playlists::-webkit-scrollbar {
     width: 1vw;
 }
 
-#user_playlists::-webkit-scrollbar-thumb {
+#playlists::-webkit-scrollbar-thumb {
     background: rgba(128, 128, 128, 0.5);
     border: 0.1vh solid rgba(65, 85, 189, 0.5);
     border-radius: 2vh;
     transition: 500ms;
 }
 
-#user_playlists::-webkit-scrollbar-thumb:hover {
+#playlists::-webkit-scrollbar-thumb:hover {
     background: rgba(128, 128, 128, 1);
     border: 0.1vh solid rgba(65, 85, 189, 1);
+}
+
+#playlists, #tracks {
+    height: 100%;
+    overflow-y: scroll;
+    overflow-x: unset;
+    opacity: 0.8;
+    transition: 250ms;
+    padding: 1vh 0.1vw 1vh 1vw;
+}
+
+#tracks {
+    position: absolute;
+    margin-left: 22vw;
+}
+
+#tracks {
+    height: ;
 }
