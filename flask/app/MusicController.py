@@ -1,4 +1,5 @@
 import time
+import os
 from pathlib import Path
 
 from app.SpotifyAPI import Artist, Album, Playlist, Track
@@ -15,6 +16,10 @@ class Tracks:
     def __str__(self):
         return f"Tracks(pt: {self.cur_track}, tracks: " \
                f"[{','.join([track.name for track in self.tracks])}])"
+
+    def add_next_track(self, track: Track):
+        self.tracks.insert(self.cur_track + 1, track)
+        print(self.tracks)
 
     def add_future_track(self, track: Track):
         self.tracks.append(track)
@@ -59,7 +64,7 @@ class MusicController:
 
         self.connection: connection_cext.CMySQLConnection | None = None
         self.cursor: connection_cext.CMySQLCursor | None = None
-        self.spotify_api: "SpotifyAPI" | None = None
+        self.downloader: "MusicDownloader" | None = None
 
     def connect(self):
         config = {
@@ -73,7 +78,12 @@ class MusicController:
         self.connection = connector.connect(**config)
         self.cursor = self.connection.cursor()
 
-    def _get_song_from_db(self, song_id) -> Track:
+    def get_song_from_db(self, song_id) -> Track:
+        # create song if not existing
+        if not self.is_existing("Song", song_id):
+            track = self.downloader.spotify_api.get_track()
+            self.save_song(track)
+            return track
         # song
         sql = f"SELECT name, id_album, duration_ms " \
               f"FROM Song WHERE id = '{song_id}'"
@@ -105,7 +115,7 @@ class MusicController:
 
     def get_playlist(self, playlist_id: str) -> Playlist:
         if not self.is_existing("Playlist", playlist_id):
-            playlist = self.spotify_api.get_playlist(playlist_id)
+            playlist = self.downloader.spotify_api.get_playlist(playlist_id)
             self.save_playlist(playlist)
 
         self.cursor.execute(f"SELECT name FROM Playlist "
@@ -118,14 +128,14 @@ class MusicController:
         self.cursor.execute(f"SELECT id_song FROM Playlist "
                             f"WHERE id_playlist = '{playlist_id}'")
         for song_id in self.cursor:
-            songs.append(self._get_song_from_db(song_id))
+            songs.append(self.get_song_from_db(song_id))
         self.cursor.reset()
 
         return Playlist(playlist_id, playlist_name, songs)
 
     def get_album(self, album_id: str) -> Album:
         if not self.is_existing("Album", album_id):
-            album = self.spotify_api.get_album(album_id)
+            album = self.downloader.spotify_api.get_album(album_id)
             self.save_album(album)
 
         self.cursor.execute(f"SELECT name, image_url FROM Album "
@@ -150,8 +160,8 @@ class MusicController:
         self.cursor.execute(f"SELECT id FROM Song "
                             f"WHERE id_album = '{album_id}'")
         for song_id in self.cursor:
-            songs.append(self._get_song_from_db(song_id[0]))
-        self.cursor.reset()
+            self.cursor.reset()
+            songs.append(self.get_song_from_db(song_id[0]))
 
         return Album(
             album_id, album_name, songs, album_img_url, album_artists
@@ -159,7 +169,7 @@ class MusicController:
 
     def get_playlists_from_track(self, track_id: str) -> list[Playlist]:
         if not self.is_existing("Song", track_id):
-            track = self.spotify_api.get_track(track_id)
+            track = self.downloader.spotify_api.get_track(track_id)
             self.save_song(track)
 
         sql = f"SELECT id_playlist FROM SongPlaylist " \
@@ -175,7 +185,7 @@ class MusicController:
         self.cursor.execute(f"SELECT id FROM Song ORDER BY RAND()")
         for track_id in self.cursor:
             self.cursor.reset()
-            return self._get_song_from_db(track_id[0])
+            return self.get_song_from_db(track_id[0])
         self.cursor.reset()
 
         # if not song exists in database, wait until one is added
@@ -183,6 +193,12 @@ class MusicController:
         return self.get_random_song()
 
     def save_song(self, track: Track, add_future_tracks=False):
+        if not os.path.isfile(os.path.join(self.downloader.song_dir,
+                                           track.id_filename)):
+            # self.downloader.download_song(track)
+            pass
+            # don´t download every track, only that ones that are the user want to play
+
         # refresh cur, last track
         if add_future_tracks:
             self.tracks.add_future_track(track)
@@ -280,7 +296,7 @@ class MusicController:
         for track_id in self.cursor:
             self.cursor.reset()
             self.tracks.add_future_track(
-                self._get_song_from_db(track_id[0])
+                self.get_song_from_db(track_id[0])
             )
             return self.tracks.get_future_song()
         self.cursor.reset()
@@ -293,7 +309,7 @@ class MusicController:
             for track_id in self.cursor:
                 self.cursor.reset()
                 self.tracks.add_future_track(
-                    self._get_song_from_db(track_id[0])
+                    self.get_song_from_db(track_id[0])
                 )
                 return self.tracks.get_future_song()
             self.cursor.reset()

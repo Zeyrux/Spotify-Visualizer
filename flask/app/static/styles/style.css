@@ -106,9 +106,7 @@ canvas {
 }
 
 #playlists {
-    width: 20vw;
     box-shadow: inset 0 0 3vh rgba(0, 0, 0, 0.15);
-    border-radius: 3vh 1vh 1vh 3vh;
     display: flex;
     flex-wrap: wrap;
 }
@@ -117,29 +115,30 @@ canvas {
     opacity: 1;
 }
 
-#playlists p{
+#playlists p, #tracks p{
     margin: 0.5vh 0;
     font-size: 2.5vh;
     white-space: nowrap;
     overflow-x: hidden;
+    width: 100%;
 }
 
 #playlists p:hover {
     cursor: pointer;
 }
 
-#playlists::-webkit-scrollbar {
+#playlists::-webkit-scrollbar, #tracks::-webkit-scrollbar{
     width: 1vw;
 }
 
-#playlists::-webkit-scrollbar-thumb {
+#playlists::-webkit-scrollbar-thumb, #tracks::-webkit-scrollbar-thumb {
     background: rgba(128, 128, 128, 0.5);
     border: 0.1vh solid rgba(65, 85, 189, 0.5);
     border-radius: 2vh;
     transition: 500ms;
 }
 
-#playlists::-webkit-scrollbar-thumb:hover {
+#playlists::-webkit-scrollbar-thumb:hover, #tracks::-webkit-scrollbar-thumb:hover {
     background: rgba(128, 128, 128, 1);
     border: 0.1vh solid rgba(65, 85, 189, 1);
 }
@@ -151,13 +150,11 @@ canvas {
     opacity: 0.8;
     transition: 250ms;
     padding: 1vh 0.1vw 1vh 1vw;
+    width: 20vw;
+    border-radius: 3vh 1vh 1vh 3vh;
 }
 
 #tracks {
     position: absolute;
     margin-left: 22vw;
-}
-
-#tracks {
-    height: ;
 }

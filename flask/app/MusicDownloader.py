@@ -94,9 +94,14 @@ class MusicDownloader:
 
     def download_cur_song(self):
         track = self.spotify_api.get_currently_playing_track()
-        # if no song found, exit
         if track is None:
             return
+        self.download_song(track)
+
+    def download_song(self, track: "Track") -> "Track":
+        # get track obj
+        if type(track).__name__ == "str":
+            track = self.spotify_api.get_track(track)
         # if song downloaded, exit
         if self.controller.is_existing("Song", track.id):
             return
@@ -112,6 +117,7 @@ class MusicDownloader:
         # add song data to database
         self.controller.save_song(track, True)
         print("Downloaded:", track.filename)
+        return track
 
     def start(self, token_info: dict):
         self.token_info = token_info
@@ -119,6 +125,8 @@ class MusicDownloader:
         Thread(target=self.run, daemon=True).start()
 
     def run(self):
-        while True:
-            self.download_cur_song()
-            time.sleep(10)
+        return
+        # while True:
+        #     self.download_cur_song()
+        #     time.sleep(30)
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! removed run

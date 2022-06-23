@@ -137,7 +137,7 @@ class Playlist:
             yield track
 
     @staticmethod
-    def from_request(response: dict) -> "Playlist":
+    def from_response(response: dict) -> "Playlist":
         id = response["id"]
         name = response["name"]
         tracks = []
@@ -171,17 +171,33 @@ class SpotifyAPI:
 
     def authorize(self, code: str) -> dict:
         token = self.get_oauth().get_access_token(code)
-        self.spotify = Spotify(auth=token["access_token"])
+        self.spotify = Spotify(auth=token["access_token"],
+                               requests_timeout=1.5, retries=10)
         return token
 
     def get_playlist(self, id: str) -> Playlist:
-        return Playlist.from_request(self.spotify.playlist(id))
+        while True:
+            try:
+                return Playlist.from_response(self.spotify.playlist(id))
+            except TimeoutError:
+                print("Got Timeout")
+                time.sleep(2)
 
     def get_album(self, id: str) -> Album:
-        return Album.from_response(self.spotify.album(id))
+        while True:
+            try:
+                return Album.from_response(self.spotify.album(id))
+            except TimeoutError:
+                print("Got Timeout")
+                time.sleep(2)
 
     def get_track(self, id: str) -> Track:
-        return Track.from_response(self.spotify.track(id))
+        while True:
+            try:
+                return Track.from_response(self.spotify.track(id))
+            except TimeoutError:
+                print("Got Timeout")
+                time.sleep(2)
 
     def _get_recommendation(self, tracks: list[Track],
                             cnt_recommendations: int):
@@ -198,9 +214,15 @@ class SpotifyAPI:
 
     def get_recommendation(self, tracks: list[Track]) -> Track:
         seed_tracks = [track.id for track in tracks]
-        return Track.from_response(
-            self.spotify.recommendations(seed_tracks=seed_tracks, limit=1)
-        )
+        while True:
+            try:
+                return Track.from_response(
+                    self.spotify.recommendations(seed_tracks=seed_tracks,
+                                                 limit=1)
+                )
+            except TimeoutError:
+                print("Got Timeout")
+                time.sleep(2)
 
     def get_recommendations_for_playlist(
             self, playlist: Playlist, cnt_recommendations: int
@@ -213,7 +235,13 @@ class SpotifyAPI:
         return self._get_recommendation(album.tracks, cnt_recommendations)
 
     def _get_user_playlists(self) -> list[Playlist]:
-        response = self.spotify.current_user_playlists()
+        while True:
+            try:
+                response = self.spotify.current_user_playlists()
+                break
+            except TimeoutError:
+                print("Got Timeout")
+                time.sleep(2)
         playlists = []
         for playlist in response["items"]:
             playlist = self.get_playlist(playlist["id"])

@@ -71,6 +71,8 @@ class YoutubeAPI:
         tracks_found = self._search_tracks_youtube(args)
 
         for track_found in tracks_found["items"]:
+            if track_found["id"]["kind"] != "youtube#video":
+                continue
             url = f"https://www.youtube.com/watch?v=" \
                   f"{track_found['id']['videoId']}"
             track_pytube = pytube.YouTube(url)

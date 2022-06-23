@@ -1,13 +1,13 @@
 import { controller, user_playlists } from "./init.js";
 
-export function create_form(form_id, submit_value, create_hidden, hidden_value, hidden_name) {
+export function create_form(form_id, action, submit_value, create_hidden, hidden_value, hidden_name) {
     // create form
     let form = document.createElement("form");
     if (form_id != undefined) {
         form.id = form_id
     }
     form.method = "get";
-    form.action = "/visualizer";
+    form.action = action;
 
     // create submit
     let submit = document.createElement("input");
@@ -200,6 +200,11 @@ export function create_user_playlists() {
         p.innerHTML = playlist.name;
         p.addEventListener("click", function (e) {
             document.getElementById(playlist.id).style.display = "inline";
+            window.addEventListener("click", function (e) {
+                if (e.target.innerHTML != playlist.name) {
+                    document.getElementById(playlist.id).style.display = "none";
+                }
+            });
         });
         div.appendChild(p);
     });
@@ -220,6 +225,12 @@ export function create_user_tracks() {
         playlist.tracks.forEach(track => {
             let p = document.createElement("p");
             p.innerHTML = track.name;
+            p.addEventListener("click", function (e) {
+                let form = create_form("play_track_form", "/play_track", "Submit", true, track.id, "track");
+                div_track.appendChild(form);
+                //form.click();
+                //form.submit();
+            })
             div_track.appendChild(p);
         });
         div.appendChild(div_track);

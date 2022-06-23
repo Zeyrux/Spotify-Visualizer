@@ -1,6 +1,5 @@
 import os
 import secrets
-import json
 from pathlib import Path
 
 from app.MusicDownloader import MusicDownloader
@@ -40,7 +39,7 @@ music_downloader = MusicDownloader(
     music_controller, DATABASE_DIR,
     KEYS_DIR, "http://localhost:5000/save_login"
 )
-music_controller.spotify_api = music_downloader.spotify_api
+music_controller.downloader = music_downloader
 
 default_controller = '{"loop_active": false, "fps": 60, "volume": 0.20}'
 
@@ -79,6 +78,14 @@ def add_playlist():
     return "Hallo"
 
 
+@app.route("/play_track", methods=["GET"])
+def play_track():
+    track_id = request.args["track"]
+    track = music_downloader.download_song(track_id)
+    music_controller.tracks.add_next_track(track)
+    return redirect(url_for("visualizer", **request.args))
+
+
 @app.route("/visualizer", methods=["GET"])
 def visualizer():
     if not session.get("token_info", None):
@@ -90,7 +97,7 @@ def visualizer():
         else music_controller.get_song()
 
     file_path = os.path.join(*DATABASE_DIR.parts[1:], track.id_filename)
-    user_playlists = music_controller.spotify_api.get_user_playlists(True)
+    user_playlists = music_downloader.spotify_api.get_user_playlists(True)
     return render_template(
         "visualizer.html", file_path=file_path,
         song_name=track.name, controller=controller,
