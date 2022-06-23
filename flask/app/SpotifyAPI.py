@@ -245,7 +245,7 @@ class SpotifyAPI:
         playlists = []
         for playlist in response["items"]:
             playlist = self.get_playlist(playlist["id"])
-            self.controller.save_playlist(playlist)
+            self.controller.save_playlist(playlist, True)
             playlists.append(playlist)
         return playlists
 

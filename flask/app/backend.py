@@ -46,7 +46,8 @@ default_controller = '{"loop_active": false, "fps": 60, "volume": 0.20}'
 
 @app.before_first_request
 def start():
-    music_controller.connect()
+    # music_controller.connect()
+    pass
 
 
 @app.route("/favicon.ico")
@@ -90,6 +91,7 @@ def play_track():
 def visualizer():
     if not session.get("token_info", None):
         return redirect(url_for("homepage"))
+    user_playlists = music_downloader.spotify_api.get_user_playlists(True)
 
     controller = request.args["controller"] if "controller" in request.args \
         else default_controller
@@ -97,7 +99,6 @@ def visualizer():
         else music_controller.get_song()
 
     file_path = os.path.join(*DATABASE_DIR.parts[1:], track.id_filename)
-    user_playlists = music_downloader.spotify_api.get_user_playlists(True)
     return render_template(
         "visualizer.html", file_path=file_path,
         song_name=track.name, controller=controller,

@@ -115,7 +115,7 @@ class MusicDownloader:
         self._add_thumbnail(path_song, track)
         self._add_song_data(path_song, track)
         # add song data to database
-        self.controller.save_song(track, True)
+        self.controller.save_song(track, add_future_tracks=True)
         print("Downloaded:", track.filename)
         return track
 
