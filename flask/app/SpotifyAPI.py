@@ -3,6 +3,7 @@ import random
 import json
 from dataclasses import dataclass, field
 
+import requests.exceptions
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy import Spotify
 
@@ -179,24 +180,24 @@ class SpotifyAPI:
         while True:
             try:
                 return Playlist.from_response(self.spotify.playlist(id))
-            except TimeoutError:
-                print("Got Timeout")
+            except:
+                print("Keine Internet Verbindung")
                 time.sleep(2)
 
     def get_album(self, id: str) -> Album:
         while True:
             try:
                 return Album.from_response(self.spotify.album(id))
-            except TimeoutError:
-                print("Got Timeout")
+            except:
+                print("Keine Internet Verbindung")
                 time.sleep(2)
 
     def get_track(self, id: str) -> Track:
         while True:
             try:
                 return Track.from_response(self.spotify.track(id))
-            except TimeoutError:
-                print("Got Timeout")
+            except:
+                print("Keine Internet Verbindung")
                 time.sleep(2)
 
     def _get_recommendation(self, tracks: list[Track],
@@ -220,8 +221,8 @@ class SpotifyAPI:
                     self.spotify.recommendations(seed_tracks=seed_tracks,
                                                  limit=1)
                 )
-            except TimeoutError:
-                print("Got Timeout")
+            except:
+                print("Keine Internet Verbindung")
                 time.sleep(2)
 
     def get_recommendations_for_playlist(
@@ -239,8 +240,8 @@ class SpotifyAPI:
             try:
                 response = self.spotify.current_user_playlists()
                 break
-            except TimeoutError:
-                print("Got Timeout")
+            except:
+                print("Keine Internet Verbindung")
                 time.sleep(2)
         playlists = []
         for playlist in response["items"]:

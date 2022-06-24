@@ -1,4 +1,5 @@
 SET GLOBAL connect_timeout=6000;
+SET GLOBAL max_allowed_packet=67108864;
 
 CREATE DATABASE IF NOT EXISTS Music;
 USE Music;
