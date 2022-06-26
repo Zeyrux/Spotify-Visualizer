@@ -77,6 +77,11 @@ class Connection:
         self.connection = connector.connect(**config)
         self.cursor = self.connection.cursor()
 
+        self.cursor.execute("SET GLOBAL log_output = 'FILE'")
+        self.cursor.reset()
+        self.cursor.execute("SET GLOBAL general_log = 'ON'")
+        self.cursor.reset()
+
 
 class MusicController:
     def __init__(self, path_database: Path):
