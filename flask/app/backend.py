@@ -3,7 +3,7 @@ import secrets
 from pathlib import Path
 
 from app.MusicDownloader import MusicDownloader
-from app.MusicController import MusicController
+from app.MusicController import MusicController, execute, Connection
 
 from flask import (
     Flask,
@@ -68,9 +68,7 @@ def homepage():
 @app.route("/save_login", methods=["GET"])
 def save_login():
     code = request.args.get("code")
-    token_info = music_downloader.spotify_api.authorize(code)
-    session["token_info"] = token_info
-    music_downloader.start(token_info)
+    session["token_info"] = music_downloader.spotify_api.authorize(code)
     return redirect(url_for("visualizer"))
 
 

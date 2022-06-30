@@ -3,7 +3,6 @@ import random
 import json
 from dataclasses import dataclass, field
 
-import requests.exceptions
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy import Spotify
 
@@ -24,6 +23,7 @@ def replace_illegal_chars(path: str) -> str:
 class Artist:
     id: str
     name: str
+    spotify_url: str
 
     def __str__(self):
         return self.name
@@ -36,6 +36,7 @@ class Artist:
 class Track:
     id: str
     name: str
+    spotify_url: str
     artists: list[Artist]
     duration_ms: int
     id_album: str
@@ -60,13 +61,17 @@ class Track:
     def from_response(response: dict, album_id: str = None):
         artists = []
         for artist in response["artists"]:
-            artists.append(Artist(artist["id"], artist["name"]))
+            artists.append(Artist(
+                artist["id"], artist["name"],
+                artist["external_urls"]["spotify"]
+            ))
 
         album_id = response["album"]["id"] if album_id is None else album_id
 
         return Track(
             response["id"],
             response["name"],
+            response["external_urls"]["spotify"],
             artists,
             response["duration_ms"],
             album_id
@@ -94,6 +99,7 @@ class Track:
 class Album:
     id: str
     name: str
+    spotify_url: str
     tracks: list[Track]
     image_url: str
     artists: list[Artist]
@@ -105,8 +111,10 @@ class Album:
     def from_response(response: dict) -> "Album":
         album_artists = []
         for album_artist in response["artists"]:
-            album_artists.append(Artist(album_artist["id"],
-                                        album_artist["name"]))
+            album_artists.append(Artist(
+                album_artist["id"], album_artist["name"],
+                album_artist["external_urls"]["spotify"]
+            ))
 
         tracks = []
         for track in response["tracks"]["items"]:
@@ -114,6 +122,7 @@ class Album:
 
         album = Album(response["id"],
                       response["name"],
+                      response["external_urls"]["spotify"],
                       tracks,
                       response["images"][0]["url"],
                       album_artists)
@@ -131,6 +140,7 @@ class Album:
 class Playlist:
     id: str
     name: str
+    spotify_url: str
     tracks: list[Track]
 
     def __iter__(self):
@@ -141,10 +151,11 @@ class Playlist:
     def from_response(response: dict) -> "Playlist":
         id = response["id"]
         name = response["name"]
+        spotify_url = response["external_urls"]["spotify"]
         tracks = []
         for track in response["tracks"]["items"]:
             tracks.append(Track.from_response(track["track"]))
-        return Playlist(id, name, tracks)
+        return Playlist(id, name, spotify_url, tracks)
 
     def to_dict(self) -> dict:
         return {
@@ -246,7 +257,7 @@ class SpotifyAPI:
         playlists = []
         for playlist in response["items"]:
             playlist = self.get_playlist(playlist["id"])
-            self.controller.save_playlist(playlist, True)
+            self.controller.save_playlist(playlist, threaded=True)
             playlists.append(playlist)
         return playlists
 
@@ -258,10 +269,20 @@ class SpotifyAPI:
                               self.user_playlists]
             return json.dumps(user_playlists)
         return self.user_playlists
+    #
+    # def get_currently_playing_track(self) -> Track:
+    #     track = None
+    #     while track is None:
+    #         track = self.spotify.currently_playing()
+    #         time.sleep(2)
+    #     return Track.from_response(track["item"])
+    # !!!!! change time.sleep(2) because every time even if it has found
+    # something it will wait
 
-    def get_currently_playing_track(self) -> Track:
-        track = None
-        while track is None:
-            track = self.spotify.currently_playing()
-            time.sleep(2)
-        return Track.from_response(track["item"])
+    def get_album_id_of_track(self, track_id: str) -> str:
+        while True:
+            try:
+                return self.spotify.track(track_id)["album"]["id"]
+            except:
+                print("Keine Internet Verbindung")
+                time.sleep(2)

@@ -1,16 +1,8 @@
-import time
 import os
-from threading import Thread
+import shutil
 from pathlib import Path
 
 from app.SpotifyAPI import SpotifyAPI
-from app.YoutubeAPI import YoutubeAPI
-from app.YoutubeAppsBuilder import YoutubeAppsBuilder
-
-
-import eyed3
-from eyed3.id3.frames import ImageFrame
-from urllib.request import urlretrieve
 
 
 def get_clt_id(keys_dir: Path):
@@ -22,9 +14,6 @@ def get_clt_secret(keys_dir: Path):
 
 
 class MusicDownloader:
-
-    token_info: dict | None = None
-
     def __init__(self, ref_controller: "MusicController",
                  song_dir: Path, keys_dir: Path, redirect_url: str):
         self.controller = ref_controller
@@ -34,9 +23,6 @@ class MusicDownloader:
         self.spotify_api = SpotifyAPI(
             get_clt_id(keys_dir), get_clt_secret(keys_dir),
             redirect_url, self.controller
-        )
-        self.youtube_api = YoutubeAPI(
-            YoutubeAppsBuilder(os.path.join(keys_dir, "youtube.txt"))
         )
 
     def _format_song(self, path_song: str):
@@ -64,40 +50,6 @@ class MusicDownloader:
         )
         os.remove(cpy_path)
 
-    def _add_thumbnail(self, path_song: str, track: "Track"):
-        thumbnail_path = path_song[:path_song.rindex(".")] + "thumbnail.jpeg"
-        # get thumbnail
-        urlretrieve(track.album(self.controller).image_url, thumbnail_path)
-
-        # add thumbnail
-        file = eyed3.load(path_song)
-        if file.tag is None:
-            file.initTag()
-        file.tag.images.set(ImageFrame.FRONT_COVER,
-                            open(thumbnail_path, "rb").read(),
-                            "image/jpeg")
-        file.tag.save()
-        os.remove(thumbnail_path)
-
-    def _add_song_data(self, path_song: str, track: "Track"):
-        file = eyed3.load(path_song)
-        if file.tag is None:
-            file.initTag()
-
-        file.tag.artist = "; ".join([str(artist) for artist in track.artists])
-        file.tag.album = track.album(self.controller).name
-        file.tag.album_artist = "; ".join(
-            [str(artist) for artist in track.album(self.controller).artists]
-        )
-        file.tag.title = track.name
-        file.tag.save()
-
-    def download_cur_song(self):
-        track = self.spotify_api.get_currently_playing_track()
-        if track is None:
-            return
-        self.download_song(track)
-
     def download_song(self, track: "Track") -> "Track":
         # get track obj
         if type(track).__name__ == "str":
@@ -105,28 +57,14 @@ class MusicDownloader:
         # if song downloaded, exit
         if self.controller.is_existing("Song", track.id):
             return
-        # search for track
-        pytube_obj = self.youtube_api.search_song(track)
-        # download track
-        self.youtube_api.download(pytube_obj, self.song_dir, track.id_filename)
-        path_song = os.path.join(self.song_dir, track.id_filename)
-        # format song, add thumbnail, add song data
-        self._format_song(path_song)
-        self._add_thumbnail(path_song, track)
-        self._add_song_data(path_song, track)
+        os.system(f"spotdl {track.spotify_url}")
+        shutil.rmtree("spotdl-temp", ignore_errors=True)
+        for path in os.listdir("./"):
+            if ".mp3" in path:
+                song_path = os.path.join(self.song_dir, track.id_filename)
+                shutil.move(path, song_path)
+                self._format_song(song_path)
         # add song data to database
         self.controller.save_song(track, add_future_tracks=True)
         print("Downloaded:", track.filename)
         return track
-
-    def start(self, token_info: dict):
-        self.token_info = token_info
-
-        Thread(target=self.run, daemon=True).start()
-
-    def run(self):
-        return
-        # while True:
-        #     self.download_cur_song()
-        #     time.sleep(30)
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! removed run
