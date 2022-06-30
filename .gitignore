@@ -4,5 +4,5 @@ Interpreter
 keys
 test.py
 .cache
-.spotdl-chache
+.spotdl-cache
 __pycache__

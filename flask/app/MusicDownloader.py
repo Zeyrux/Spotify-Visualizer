@@ -64,6 +64,8 @@ class MusicDownloader:
                 song_path = os.path.join(self.song_dir, track.id_filename)
                 shutil.move(path, song_path)
                 self._format_song(song_path)
+        if os.path.isfile(os.path.join("flask", ".spotdl-cache")):
+            os.remove(os.path.join("flask", ".spotdl-cache"))
         # add song data to database
         self.controller.save_song(track, add_future_tracks=True)
         print("Downloaded:", track.filename)

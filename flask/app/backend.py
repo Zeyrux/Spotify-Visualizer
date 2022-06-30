@@ -44,12 +44,6 @@ music_controller.downloader = music_downloader
 default_controller = '{"loop_active": false, "fps": 60, "volume": 0.20}'
 
 
-@app.before_first_request
-def start():
-    # music_controller.connect()
-    pass
-
-
 @app.route("/favicon.ico")
 def favicon():
     return send_from_directory("Icon", "musik.ico",

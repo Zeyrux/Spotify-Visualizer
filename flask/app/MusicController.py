@@ -134,12 +134,50 @@ class MusicController:
         exists = False if execute(conn, sql, fetch_one=True) is None else True
         return exists
 
+    def tracks_exists(self, super: Playlist | Album,
+                      conn: Connection = None) -> bool:
+        if conn is None:
+            conn = Connection()
+        super_name = type(super).__name__
+
+        # check every track
+        for track in super.tracks:
+            if not self.is_existing("Song", track.id, conn=conn):
+                # check if song exists
+                return False
+            else:
+                # check if song is linked
+                sql = f"SELECT * FROM Song{super_name} " \
+                      f"WHERE id_song = '{track.id}' AND " \
+                      f"id_{super_name} = '{super.id}'"
+                if execute(conn, sql, fetch_one=True) is None:
+                    sql = f"INSERT IGNORE INTO Song{super_name} " \
+                          f"(id_song, id_{super_name}) " \
+                          f"VALUES ('{track.id}', '{super.id}')"
+                    execute(conn, sql)
+        return True
+
+    def playlist_exists(self, playlist: Playlist,
+                        conn: Connection = None) -> bool:
+        if conn is None:
+            conn = Connection()
+        if not self.is_existing("Playlist", playlist.id, conn=conn):
+            return False
+        return self.tracks_exists(playlist, conn=conn)
+
+    def album_exists(self, album: Album, conn: Connection = None):
+        if conn is None:
+            conn = Connection()
+        if not self.is_existing("Album", album.id, conn=conn):
+            return False
+        return self.tracks_exists(album, conn)
+
     def get_playlist(self, playlist_id: str,
                      conn: Connection = None) -> Playlist:
         if conn is None:
             conn = Connection()
 
-        if not self.is_existing("Playlist", playlist_id, conn=conn):
+        if not self.playlist_exists("Playlist", playlist_id, conn=conn):
             playlist = self.downloader.spotify_api.get_playlist(playlist_id)
             self.save_playlist(playlist, conn=conn)
 
@@ -165,7 +203,7 @@ class MusicController:
             album = self.downloader.spotify_api.get_album(album_id)
             self.save_album(album, conn=conn)
 
-        sql = f"SELECT name, spotify_url image_url FROM Album " \
+        sql = f"SELECT name, spotify_url, image_url FROM Album " \
               f"WHERE id = '{album_id}'"
         album_name, album_spotify_url, album_img_url = execute(
             conn, sql, fetch_one=True
@@ -286,13 +324,12 @@ class MusicController:
             execute(conn, sql)
 
         conn.connection.commit()
-        print("saved song:", track.name)
 
     def save_album(self, album: Album, threaded=False,
                    conn: Connection = None):
         if conn is None:
             conn = Connection()
-        if self.is_existing("Album", album.id, conn=conn):
+        if self.album_exists(album, conn=conn):
             return
 
         # insert album
@@ -324,7 +361,7 @@ class MusicController:
                       conn: Connection = None):
         if conn is None:
             conn = Connection()
-        if self.is_existing("Playlist", playlist.id, conn=conn):
+        if self.playlist_exists(playlist, conn=conn):
             return
 
         # insert playlist
