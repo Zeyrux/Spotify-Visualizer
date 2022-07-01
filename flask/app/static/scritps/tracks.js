@@ -1,15 +1,17 @@
 export class Artist {
-    constructor (artist) {
+    constructor(artist) {
         this.id = artist["id"];
         this.name = artist["name"];
+        this.spotify_url = artist["spotify_url"];
     }
 }
 
 
 export class Track {
-    constructor (track) {
+    constructor(track) {
         this.id = track["id"];
         this.name = track["name"];
+        this.spotify_url = track["spotify_url"];
         this.artists = []
         track["artists"].forEach(artist => {
             this.artists.push(new Artist(artist));
@@ -20,9 +22,10 @@ export class Track {
 
 
 export class Album {
-    constructor (album) {
+    constructor(album) {
         this.id = album["id"];
         this.name = album["name"];
+        this.spotify_url = album["spotify_url"];
         this.tracks = [];
         album["tracks"].forEach(track => {
             this.tracks.push(new Track(track));
@@ -37,9 +40,10 @@ export class Album {
 
 
 export class Playlist {
-    constructor (playlist) {
+    constructor(playlist) {
         this.id = playlist["id"];
         this.name = playlist["name"];
+        this.spotify_url = playlist["spotify_url"];
         this.tracks = [];
         playlist["tracks"].forEach(track => {
             this.tracks.push(new Track(track));

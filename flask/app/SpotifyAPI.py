@@ -1,3 +1,4 @@
+from this import d
 import time
 import random
 import json
@@ -79,7 +80,7 @@ class Track:
 
     def to_dict(self) -> dict:
         return {
-            "id": self.id, "name": self.name,
+            "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
             "artists": [artist.to_dict() for artist in self.artists],
             "duration_ms": self.duration_ms
         }
@@ -131,7 +132,7 @@ class Album:
 
     def as_dict(self) -> dict:
         return {
-            "id": self.id, "name": self.name,
+            "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
             "tracks": [track.to_dict() for track in self.tracks]
         }
 
@@ -157,9 +158,14 @@ class Playlist:
             tracks.append(Track.from_response(track["track"]))
         return Playlist(id, name, spotify_url, tracks)
 
+    def get_track(self, track_id: str) -> Track:
+        for track in self.tracks:
+            if track.id == track_id:
+                return track
+
     def to_dict(self) -> dict:
         return {
-            "id": self.id, "name": self.name,
+            "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
             "tracks": [track.to_dict() for track in self.tracks]
         }
 

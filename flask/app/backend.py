@@ -1,9 +1,10 @@
 import os
 import secrets
+import json
 from pathlib import Path
 
 from app.MusicDownloader import MusicDownloader
-from app.MusicController import MusicController, execute, Connection
+from app.MusicController import MusicController
 
 from flask import (
     Flask,
@@ -73,9 +74,10 @@ def add_playlist():
 
 @app.route("/play_track", methods=["GET"])
 def play_track():
-    track_id = request.args["track"]
-    track = music_downloader.download_song(track_id)
-    music_controller.tracks.add_next_track(track)
+    track_id = request.args["track_id"]
+    playlist_id = request.args["playlist_id"]
+    playlist = music_controller.get_playlist(playlist_id)
+    music_controller.tracks.play_playlist(playlist, track_id)
     return redirect(url_for("visualizer", **request.args))
 
 
@@ -94,5 +96,5 @@ def visualizer():
     return render_template(
         "visualizer.html", file_path=file_path,
         song_name=track.name, controller=controller,
-        user_playlists=user_playlists
+        user_playlists=user_playlists, track=json.dumps(track.to_dict())
     )

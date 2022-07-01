@@ -28,7 +28,7 @@ export function create_form(form_id, action, submit_value, create_hidden, hidden
     controller_input.type = "hidden";
     form.addEventListener("click", (e) => controller_input.value = JSON.stringify(controller));
     controller_input.setAttribute("name", "controller");
-    
+
     form.appendChild(submit);
     form.appendChild(controller_input);
     if (create_hidden)
@@ -50,7 +50,7 @@ export function set_false(element) {
 export function create_checkable_button(innerHTML, update_variable, clicked) {
     let button = document.createElement("button");
     button.innerHTML = innerHTML;
-    
+
     if (clicked)
         set_true(button);
     else
@@ -172,7 +172,7 @@ export function create_slider_volume(start) {
 
 export function create_fps() {
     let select = document.createElement("select");
-    
+
     // add all fps
     let all_fps = [240, 144, 60, 30, 15, 1]
     all_fps.forEach(fps => {
@@ -192,7 +192,7 @@ export function create_fps() {
 export function create_user_playlists() {
     let div = document.createElement("div");
     div.id = "playlists"
-    
+
     // create playlists
     user_playlists.forEach(playlist => {
         // create text
@@ -226,10 +226,16 @@ export function create_user_tracks() {
             let p = document.createElement("p");
             p.innerHTML = track.name;
             p.addEventListener("click", function (e) {
-                let form = create_form("play_track_form", "/play_track", "Submit", true, track.id, "track");
+                let form = create_form("play_track_form", "/play_track", "Submit", true, track.id, "track_id");
+                let hidden = document.createElement("input");
+                hidden.type = "hidden";
+                hidden.name = "playlist_id";
+                hidden.value = playlist.id;
+                form.appendChild(hidden);
+                form.style.visibility = "hidden";
                 div_track.appendChild(form);
-                //form.click();
-                //form.submit();
+                form.click();
+                form.submit();
             })
             div_track.appendChild(p);
         });

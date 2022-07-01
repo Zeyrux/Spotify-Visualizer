@@ -1,5 +1,5 @@
 import { create_form, create_button, create_checkable_button, create_slider_volume, create_slider_duration, seconds_to_string, create_fps, create_user_playlists, create_user_tracks } from "./utilities.js";
-import { controller } from "./init.js";
+import { controller, track } from "./init.js";
 
 export var gradientBars;
 export var gradientCircleAll;
@@ -12,16 +12,16 @@ let audio = document.getElementById("audio");
 let post_init_id
 
 function resize() {
-    canvas.width = window.innerWidth - 20;
-    canvas.height = window.innerHeight - 20;
-    bars = Math.ceil(canvas.width / 4) + 1;
-    setGradients();
+	canvas.width = window.innerWidth - 20;
+	canvas.height = window.innerHeight - 20;
+	bars = Math.ceil(canvas.width / 4) + 1;
+	setGradients();
 }
 
 
 export function setGradients() {
 	let ctx = canvas.getContext('2d')
-    gradientBars = ctx.createLinearGradient(canvas.width, canvas.height, canvas.width, -canvas.height);
+	gradientBars = ctx.createLinearGradient(canvas.width, canvas.height, canvas.width, -canvas.height);
 	gradientBars.addColorStop(0.0, "blue");
 	gradientBars.addColorStop(0.4, "red");
 	gradientCircleAll = ctx.createLinearGradient(canvas.width, 0, canvas.width, canvas.height);
@@ -34,7 +34,7 @@ export function setGradients() {
 
 
 function post_init() {
-	if (! isNaN(audio.duration)) {
+	if (!isNaN(audio.duration)) {
 		clearInterval(post_init_id);
 		document.getElementById("duration_slider").max = audio.duration;
 	}
@@ -46,7 +46,7 @@ function init() {
 	resize();
 
 	// add buttons
-	controlls.appendChild(create_slider_duration(audio.duration))
+	controlls.appendChild(create_slider_duration(track.duration_ms / 1000));
 	controlls.appendChild(create_form("skip_form", "/visualizer", "Skip", false, undefined, undefined));
 	controlls.appendChild(create_form("back_form", "/visualizer", "Back", true, "back", "back"));
 	controlls.appendChild(create_button("Pause", "hover_button", "play_pause"));
@@ -78,7 +78,7 @@ function init() {
 
 	// skip song if song ends
 	window.setInterval(function (e) {
-        document.getElementById("duration_label").innerHTML = seconds_to_string(audio.currentTime);
+		document.getElementById("duration_label").innerHTML = seconds_to_string(audio.currentTime);
 		document.getElementById("duration_slider").value = audio.currentTime;
 		if (audio.currentTime > audio.duration - 1) {
 			if (controller["loop_active"])

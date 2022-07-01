@@ -55,17 +55,17 @@ class MusicDownloader:
         if type(track).__name__ == "str":
             track = self.spotify_api.get_track(track)
         # if song downloaded, exit
-        if self.controller.is_existing("Song", track.id):
+        if os.path.isfile(os.path.join(self.song_dir, track.id_filename)):
             return
         os.system(f"spotdl {track.spotify_url}")
-        shutil.rmtree("spotdl-temp", ignore_errors=True)
+        # shutil.rmtree("spotdl-temp")
+        # if os.path.isfile(".spotdl-cache"):
+        #     os.remove(".spotdl-cache")
         for path in os.listdir("./"):
             if ".mp3" in path:
                 song_path = os.path.join(self.song_dir, track.id_filename)
                 shutil.move(path, song_path)
                 self._format_song(song_path)
-        if os.path.isfile(os.path.join("flask", ".spotdl-cache")):
-            os.remove(os.path.join("flask", ".spotdl-cache"))
         # add song data to database
         self.controller.save_song(track, add_future_tracks=True)
         print("Downloaded:", track.filename)
