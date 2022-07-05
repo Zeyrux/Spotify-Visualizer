@@ -25,48 +25,52 @@ class MusicDownloader:
             redirect_url, self.controller
         )
 
-    def _format_song(self, path_song: str):
-        cpy_path = path_song[:path_song.rindex('.')] \
-                   + "copy" + path_song[path_song.rindex('.'):]
+    def _format_song(self, track: "Track", dir: Path):
+        cpy = os.path.join(dir, track.copy_filename)
+        temp = os.path.join(dir, track.temp_filename)
+        final = os.path.join(dir, track.id_filename)
         # change codec
         os.system(
             f"ffmpeg -y -loglevel quiet -i "
-            f"\"{path_song}\" -acodec mp3 -vcodec copy \"{cpy_path}\""
+            f"\"{cpy}\" -acodec mp3 -vcodec copy \"{temp}\""
         )
-        # remove silent begin and end
+        # remove silent in begin and end
         os.system(
             f"ffmpeg -y -loglevel quiet -i "
-            f"\"{cpy_path}\" "
+            f"\"{temp}\" "
             f"-af silenceremove=start_periods=1:start_silence=0.1:"
             f"start_threshold=-50dB,areverse,"
             f"silenceremove=start_periods=1:start_silence=0.1:"
             f"start_threshold=-50dB,areverse "
-            f"\"{path_song}\""
+            f"\"{cpy}\""
         )
         # normalize volume
         os.system(
             f"ffmpeg -y -loglevel quiet -i "
-            f"{path_song} -af 'volume=1dB' {path_song}"
+            f"{cpy} -af 'volume=1dB' {cpy}"
         )
-        os.remove(cpy_path)
+        os.rename(cpy, final)
+        os.remove(temp)
 
     def download_song(self, track: "Track") -> "Track":
+        if os.path.isfile(os.path.join(self.song_dir, track.id_filename)):
+            return
         # get track obj
         if type(track).__name__ == "str":
             track = self.spotify_api.get_track(track)
         # if song downloaded, exit
-        if os.path.isfile(os.path.join(self.song_dir, track.id_filename)):
+        song_path = os.path.join(self.song_dir, track.copy_filename)
+        if os.path.isfile(song_path):
             return
+        # move song
         os.system(f"spotdl {track.spotify_url}")
-        # shutil.rmtree("spotdl-temp")
-        # if os.path.isfile(".spotdl-cache"):
-        #     os.remove(".spotdl-cache")
-        for path in os.listdir("./"):
-            if ".mp3" in path:
-                song_path = os.path.join(self.song_dir, track.id_filename)
-                shutil.move(path, song_path)
-                self._format_song(song_path)
-        # add song data to database
-        self.controller.save_song(track, add_future_tracks=True)
-        print("Downloaded:", track.filename)
+        try:
+            shutil.move(track.filename, song_path)
+            # format song
+            self._format_song(track, self.song_dir)
+            # add song data to database
+            self.controller.save_song(track)
+            print("Downloaded:", track.filename)
+        except OSError as e:
+            print(f"Already downloaded {track.name}: {e}")
         return track

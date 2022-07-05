@@ -195,18 +195,32 @@ export function create_user_playlists() {
 
     // create playlists
     user_playlists.forEach(playlist => {
-        // create text
+        // create playlist div
+        let playlist_div = document.createElement("div");
+        playlist_div.className = "playlist";
+
+        // add image
+        let playlist_image = document.createElement("img");
+        playlist_image.src = playlist.image_url;
+        playlist_image.className = "playlist_image";
+
+        // add text
         let p = document.createElement("p");
         p.innerHTML = playlist.name;
-        p.addEventListener("click", function (e) {
+        // add event
+        playlist_div.addEventListener("click", function (e) {
+            // display playlist
             document.getElementById(playlist.id).style.display = "inline";
             window.addEventListener("click", function (e) {
                 if (e.target.innerHTML != playlist.name) {
+                    // undisplay playlist
                     document.getElementById(playlist.id).style.display = "none";
                 }
             });
         });
-        div.appendChild(p);
+        playlist_div.appendChild(playlist_image);
+        playlist_div.appendChild(p);
+        div.appendChild(playlist_div);
     });
 
     return div
@@ -219,13 +233,24 @@ export function create_user_tracks() {
 
     // create tracks
     user_playlists.forEach(playlist => {
-        let div_track = document.createElement("div");
-        div_track.id = playlist.id;
-        div_track.style.display = "none";
+        // create track div
+        let div_tracks = document.createElement("div");
+        div_tracks.id = playlist.id;
+        div_tracks.style.display = "none";
+        // add tracks
         playlist.tracks.forEach(track => {
+            // create div track
+            let div_track = document.createElement("div");
+            div_track.className = "track";
+            // create image
+            let image = document.createElement("img");
+            image.src = track.image_url;
+            image.className = "track_image";
+            // create p
             let p = document.createElement("p");
             p.innerHTML = track.name;
             p.addEventListener("click", function (e) {
+                // create form and add second hidden input
                 let form = create_form("play_track_form", "/play_track", "Submit", true, track.id, "track_id");
                 let hidden = document.createElement("input");
                 hidden.type = "hidden";
@@ -233,13 +258,15 @@ export function create_user_tracks() {
                 hidden.value = playlist.id;
                 form.appendChild(hidden);
                 form.style.visibility = "hidden";
-                div_track.appendChild(form);
+                div_tracks.appendChild(form);
                 form.click();
                 form.submit();
             })
+            div_track.appendChild(image);
             div_track.appendChild(p);
+            div_tracks.appendChild(div_track);
         });
-        div.appendChild(div_track);
+        div.appendChild(div_tracks);
     });
 
     return div;

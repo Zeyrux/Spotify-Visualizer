@@ -53,6 +53,8 @@ function init() {
 	controlls.appendChild(create_checkable_button("Loop", "loop_active", false));
 	controlls.appendChild(create_fps());
 	controlls.appendChild(create_slider_volume(audio.volume));
+
+	// add playlists and tracks
 	user_palylists.appendChild(create_user_playlists());
 	user_palylists.appendChild(create_user_tracks());
 

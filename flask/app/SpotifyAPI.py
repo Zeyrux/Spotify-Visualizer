@@ -45,14 +45,18 @@ class Track:
     playlists_obj: list["Playlist"] = None
     duration_s: int = field(init=False)
     id_filename: str = field(init=False)
+    copy_filename: str = field(init=False)
+    temp_filename: str = field(init=False)
     filename: str = field(init=False)
 
     def __post_init__(self):
         self.duration_s = round(self.duration_ms / 1000)
         self.id_filename = f"{self.id}.mp3"
+        self.copy_filename = f"{self.id}_copy.mp3"
+        self.temp_filename = f"{self.id}_temp.mp3"
         self.filename = replace_illegal_chars(
-            f"{self.name} - "
-            f"{', '.join([str(artist) for artist in self.artists])}.mp3"
+            f"{', '.join([str(artist) for artist in self.artists])} - "
+            f"{self.name}.mp3"
         )
 
     def __eq__(self, other: "Track") -> bool:
@@ -78,11 +82,12 @@ class Track:
             album_id
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self, controller: "MusicController") -> dict:
         return {
             "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
             "artists": [artist.to_dict() for artist in self.artists],
-            "duration_ms": self.duration_ms
+            "duration_ms": self.duration_ms,
+            "image_url": self.album(controller).image_url
         }
 
     def album(self, controller: "MusicController") -> "Album":
@@ -130,10 +135,11 @@ class Album:
 
         return album
 
-    def as_dict(self) -> dict:
+    def to_dict(self, controller: "MusicController") -> dict:
         return {
             "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
-            "tracks": [track.to_dict() for track in self.tracks]
+            "tracks": [track.to_dict(controller) for track in self.tracks],
+            "image_url": self.image_url
         }
 
 
@@ -143,6 +149,7 @@ class Playlist:
     name: str
     spotify_url: str
     tracks: list[Track]
+    image_url: str
 
     def __iter__(self):
         for track in self.tracks:
@@ -150,23 +157,27 @@ class Playlist:
 
     @staticmethod
     def from_response(response: dict) -> "Playlist":
-        id = response["id"]
-        name = response["name"]
-        spotify_url = response["external_urls"]["spotify"]
         tracks = []
         for track in response["tracks"]["items"]:
             tracks.append(Track.from_response(track["track"]))
-        return Playlist(id, name, spotify_url, tracks)
+        return Playlist(
+            response["id"],
+            response["name"],
+            response["external_urls"]["spotify"],
+            tracks,
+            response["images"][0]["url"]
+        )
 
     def get_track(self, track_id: str) -> Track:
         for track in self.tracks:
             if track.id == track_id:
                 return track
 
-    def to_dict(self) -> dict:
+    def to_dict(self, controller: "MusicController") -> dict:
         return {
             "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
-            "tracks": [track.to_dict() for track in self.tracks]
+            "tracks": [track.to_dict(controller) for track in self.tracks],
+            "image_url": self.image_url
         }
 
 
@@ -267,23 +278,16 @@ class SpotifyAPI:
             playlists.append(playlist)
         return playlists
 
-    def get_user_playlists(self, as_str=False) -> list[Playlist] | str:
+    def get_user_playlists(
+            self, as_dict=False, controller: "MusicController" = None
+    ) -> list[Playlist] | str:
         if self.user_playlists is None:
             self.user_playlists = self._get_user_playlists()
-        if as_str:
-            user_playlists = [playlist.to_dict() for playlist in
+        if as_dict:
+            user_playlists = [playlist.to_dict(controller) for playlist in
                               self.user_playlists]
             return json.dumps(user_playlists)
         return self.user_playlists
-    #
-    # def get_currently_playing_track(self) -> Track:
-    #     track = None
-    #     while track is None:
-    #         track = self.spotify.currently_playing()
-    #         time.sleep(2)
-    #     return Track.from_response(track["item"])
-    # !!!!! change time.sleep(2) because every time even if it has found
-    # something it will wait
 
     def get_album_id_of_track(self, track_id: str) -> str:
         while True:

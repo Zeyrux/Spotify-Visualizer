@@ -12,6 +12,7 @@ export class Track {
         this.id = track["id"];
         this.name = track["name"];
         this.spotify_url = track["spotify_url"];
+        this.image_url = track["image_url"];
         this.artists = []
         track["artists"].forEach(artist => {
             this.artists.push(new Artist(artist));
@@ -26,6 +27,7 @@ export class Album {
         this.id = album["id"];
         this.name = album["name"];
         this.spotify_url = album["spotify_url"];
+        this.image_url = album["image_url"];
         this.tracks = [];
         album["tracks"].forEach(track => {
             this.tracks.push(new Track(track));
@@ -44,6 +46,7 @@ export class Playlist {
         this.id = playlist["id"];
         this.name = playlist["name"];
         this.spotify_url = playlist["spotify_url"];
+        this.image_url = playlist["image_url"];
         this.tracks = [];
         playlist["tracks"].forEach(track => {
             this.tracks.push(new Track(track));
