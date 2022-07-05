@@ -249,7 +249,7 @@ export function create_user_tracks() {
             // create p
             let p = document.createElement("p");
             p.innerHTML = track.name;
-            p.addEventListener("click", function (e) {
+            div_track.addEventListener("click", function (e) {
                 // create form and add second hidden input
                 let form = create_form("play_track_form", "/play_track", "Submit", true, track.id, "track_id");
                 let hidden = document.createElement("input");

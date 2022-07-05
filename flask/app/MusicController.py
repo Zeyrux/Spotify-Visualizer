@@ -96,6 +96,7 @@ class Connection:
             "database": "Music"
         }
         self.connection = connector.connect(**config)
+        self.connection.autocommit = True
         self.cursor = self.connection.cursor()
 
 
@@ -171,18 +172,11 @@ class MusicController:
                                                        track.id_filename)):
                 # check if song exists
                 return False
-            else:
-                # check if song is linked
-                sql = f"SELECT * FROM Song{super_name} " \
-                      f"WHERE id_song = '{track.id}' AND " \
-                      f"id_{super_name} = '{super.id}'"
-                resp = execute(conn, sql, fetch_one=True)
-                if resp is None:
-                    sql = f"INSERT IGNORE INTO Song{super_name} " \
-                          f"(id_song, id_{super_name}) " \
-                          f"VALUES ('{track.id}', '{super.id}')"
-                    execute(conn, sql)
-        conn.connection.commit()
+            # link songs
+            sql = f"INSERT IGNORE INTO Song{super_name} " \
+                f"(id_song, id_{super_name}) " \
+                f"VALUES ('{track.id}', '{super.id}')"
+            execute(conn, sql)
         return True
 
     def playlist_exists(self, playlist: Playlist,
@@ -294,35 +288,29 @@ class MusicController:
             time.sleep(2)
 
     def _worker_save_song(self):
-        conn = Connection()
         while True:
-            track, add_future_tracks = self.queue.get()
-            self._save_song(track, add_future_tracks, conn=conn)
+            track = self.queue.get()
+            self.downloader.download_song(track)
             self.queue.task_done()
 
     def save_song(self, track: Track, add_future_tracks=False,
-                  threaded=False, conn: Connection = None):
+                  threaded=False, force_insert=False, conn: Connection = None):
         if conn is None:
             conn = Connection()
-        if self.is_existing("Song", track.id, conn=conn) \
-                and os.path.isfile(
-                    os.path.join(self.path_database,
-                                 track.id_filename)
-        ):
-            return
-        if threaded:
-            self.queue.put((track, add_future_tracks))
-        else:
-            self._save_song(track, add_future_tracks, conn=conn)
-
-    def _save_song(self, track: Track, add_future_tracks,
-                   conn: Connection = None):
-        if conn is None:
-            conn = Connection()
+        if not force_insert:
+            if self.is_existing("Song", track.id, conn=conn) \
+                    and os.path.isfile(
+                        os.path.join(self.path_database,
+                                     track.id_filename)
+            ):
+                return
 
         if not os.path.isfile(os.path.join(self.downloader.song_dir,
                                            track.id_filename)):
-            self.downloader.download_song(track)
+            if threaded:
+                self.queue.put(track)
+            else:
+                self.downloader.download_song(track)
 
         # refresh cur, last track
         if add_future_tracks:
@@ -359,8 +347,6 @@ class MusicController:
                   f"VALUES ('{track.id}', '{artist.id}')"
             execute(conn, sql)
 
-        conn.connection.commit()
-
     def save_album(self, album: Album, threaded=False,
                    conn: Connection = None):
         if conn is None:
@@ -386,8 +372,6 @@ class MusicController:
             sql = f"INSERT IGNORE INTO AlbumArtists (id_album, id_artist) " \
                   f"VALUES ('{album.id}', '{artist.id}')"
             execute(conn, sql)
-
-        conn.connection.commit()
 
         # add songs
         for track in album.tracks:
@@ -416,7 +400,7 @@ class MusicController:
                   f"VALUES ('{track.id}', '{playlist.id}')"
             execute(conn, sql)
 
-        conn.connection.commit()
+        # conn.connection.commit()
 
     def get_song(self, conn: Connection = None) -> Track:
         if conn is None:

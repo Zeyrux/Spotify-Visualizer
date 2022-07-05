@@ -93,7 +93,7 @@ def visualizer():
     if not session.get("token_info", None):
         return redirect(url_for("homepage"))
     user_playlists = music_downloader.spotify_api.get_user_playlists(
-        as_dict=True, controller=music_controller)
+        as_dict=True, spotify_api=music_downloader.spotify_api)
 
     controller = request.args["controller"] if "controller" in request.args \
         else default_controller
@@ -105,5 +105,5 @@ def visualizer():
         "visualizer.html", file_path=file_path,
         song_name=track.name, controller=controller,
         user_playlists=user_playlists, track=json.dumps(
-            track.to_dict(music_controller))
+            track.to_dict(music_downloader.spotify_api))
     )

@@ -82,12 +82,12 @@ class Track:
             album_id
         )
 
-    def to_dict(self, controller: "MusicController") -> dict:
+    def to_dict(self, spotify_api: "SpotifyAPI") -> dict:
         return {
             "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
             "artists": [artist.to_dict() for artist in self.artists],
             "duration_ms": self.duration_ms,
-            "image_url": self.album(controller).image_url
+            "image_url": spotify_api.get_image_url_of_track(self.id)
         }
 
     def album(self, controller: "MusicController") -> "Album":
@@ -135,10 +135,10 @@ class Album:
 
         return album
 
-    def to_dict(self, controller: "MusicController") -> dict:
+    def to_dict(self, spotify_api: "SpotifyAPI") -> dict:
         return {
             "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
-            "tracks": [track.to_dict(controller) for track in self.tracks],
+            "tracks": [track.to_dict(spotify_api) for track in self.tracks],
             "image_url": self.image_url
         }
 
@@ -173,10 +173,10 @@ class Playlist:
             if track.id == track_id:
                 return track
 
-    def to_dict(self, controller: "MusicController") -> dict:
+    def to_dict(self, spotify_api: "SpotifyAPI") -> dict:
         return {
             "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
-            "tracks": [track.to_dict(controller) for track in self.tracks],
+            "tracks": [track.to_dict(spotify_api) for track in self.tracks],
             "image_url": self.image_url
         }
 
@@ -191,6 +191,7 @@ class SpotifyAPI:
         self.spotify: Spotify | None = None
 
         self.user_playlists: list[Playlist] | None = None
+        self.user_playlists_as_dict: str | None = None
 
     def get_oauth(self) -> SpotifyOAuth:
         return SpotifyOAuth(client_id=self.client_id,
@@ -279,20 +280,33 @@ class SpotifyAPI:
         return playlists
 
     def get_user_playlists(
-            self, as_dict=False, controller: "MusicController" = None
+            self, as_dict=False, spotify_api: "SpotifyAPI" = None
     ) -> list[Playlist] | str:
         if self.user_playlists is None:
             self.user_playlists = self._get_user_playlists()
         if as_dict:
-            user_playlists = [playlist.to_dict(controller) for playlist in
-                              self.user_playlists]
-            return json.dumps(user_playlists)
+            if self.user_playlists_as_dict is None:
+                self.user_playlists_as_dict = [
+                    playlist.to_dict(spotify_api)
+                    for playlist in self.user_playlists
+                ]
+                self.user_playlists_as_dict = json.dumps(
+                    self.user_playlists_as_dict)
+            return self.user_playlists_as_dict
         return self.user_playlists
 
     def get_album_id_of_track(self, track_id: str) -> str:
         while True:
             try:
                 return self.spotify.track(track_id)["album"]["id"]
+            except:
+                print("Keine Internet Verbindung")
+                time.sleep(2)
+
+    def get_image_url_of_track(self, track_id: str) -> str:
+        while True:
+            try:
+                return self.spotify.track(track_id)["album"]["images"][0]["url"]
             except:
                 print("Keine Internet Verbindung")
                 time.sleep(2)
