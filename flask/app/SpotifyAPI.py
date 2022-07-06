@@ -1,4 +1,4 @@
-from this import d
+import os
 import time
 import random
 import json
@@ -6,6 +6,9 @@ from dataclasses import dataclass, field
 
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy import Spotify
+
+
+PATH_USER_PLAYLISTS = "user_playlists.playlists"
 
 
 def replace_illegal_chars(path: str) -> str:
@@ -29,8 +32,17 @@ class Artist:
     def __str__(self):
         return self.name
 
+    @staticmethod
+    def from_dict(dictionary: dict) -> "Artist":
+        return Artist(
+            dictionary["id"],
+            dictionary["name"],
+            dictionary["spotify_url"]
+        )
+
     def to_dict(self) -> dict:
-        return {"id": self.id, "name": self.name}
+        return {"id": self.id, "name": self.name,
+                "spotify_url": self.spotify_url}
 
 
 @dataclass
@@ -43,6 +55,7 @@ class Track:
     id_album: str
     album_obj: "Album" = None
     playlists_obj: list["Playlist"] = None
+    image_url: str = None
     duration_s: int = field(init=False)
     id_filename: str = field(init=False)
     copy_filename: str = field(init=False)
@@ -82,12 +95,26 @@ class Track:
             album_id
         )
 
+    @staticmethod
+    def from_dict(dictionary: dict) -> "Track":
+        return Track(
+            dictionary["id"],
+            dictionary["name"],
+            dictionary["spotify_url"],
+            [Artist.from_dict(artist) for artist in dictionary["artists"]],
+            dictionary["duration_ms"],
+            dictionary["id_album"],
+            image_url=dictionary["image_url"]
+        )
+
     def to_dict(self, spotify_api: "SpotifyAPI") -> dict:
+        if self.image_url is None:
+            self.image_url = spotify_api.get_image_url_of_track(self)
         return {
             "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
             "artists": [artist.to_dict() for artist in self.artists],
-            "duration_ms": self.duration_ms,
-            "image_url": spotify_api.get_image_url_of_track(self.id)
+            "duration_ms": self.duration_ms, "id_album": self.id_album,
+            "image_url": self.image_url
         }
 
     def album(self, controller: "MusicController") -> "Album":
@@ -135,6 +162,16 @@ class Album:
 
         return album
 
+    @staticmethod
+    def from_dict(dictionary: dict) -> "Album":
+        return Album(
+            dictionary["id"],
+            dictionary["name"],
+            dictionary["spotify_url"],
+            [Track.from_dict(track) for track in dictionary["tracks"]],
+            dictionary["image_url"]
+        )
+
     def to_dict(self, spotify_api: "SpotifyAPI") -> dict:
         return {
             "id": self.id, "name": self.name, "spotify_url": self.spotify_url,
@@ -168,6 +205,16 @@ class Playlist:
             response["images"][0]["url"]
         )
 
+    @staticmethod
+    def from_dict(dictionary: dict) -> "Playlist":
+        return Playlist(
+            dictionary["id"],
+            dictionary["name"],
+            dictionary["spotify_url"],
+            [Track.from_dict(track) for track in dictionary["tracks"]],
+            dictionary["image_url"]
+        )
+
     def get_track(self, track_id: str) -> Track:
         for track in self.tracks:
             if track.id == track_id:
@@ -182,6 +229,10 @@ class Playlist:
 
 
 class SpotifyAPI:
+
+    user_playlists: list[Playlist] | None = None
+    user_playlists_as_str: str | None = None
+
     def __init__(self, client_id: str, client_secret: str,
                  redirect_uri: str, controller_pt: "MusicController"):
         self.client_id = client_id
@@ -190,9 +241,6 @@ class SpotifyAPI:
         self.controller = controller_pt
         self.spotify: Spotify | None = None
 
-        self.user_playlists: list[Playlist] | None = None
-        self.user_playlists_as_dict: str | None = None
-
     def get_oauth(self) -> SpotifyOAuth:
         return SpotifyOAuth(client_id=self.client_id,
                             client_secret=self.client_secret,
@@ -200,10 +248,50 @@ class SpotifyAPI:
                             redirect_uri=self.redirect_uri)
 
     def authorize(self, code: str) -> dict:
+        # authorize the user
         token = self.get_oauth().get_access_token(code)
         self.spotify = Spotify(auth=token["access_token"],
                                requests_timeout=1.5, retries=10)
+        # initlize user playlists
+        if os.path.isfile(PATH_USER_PLAYLISTS):
+            self.set_user_playlists()
+        else:
+            self.save_user_playlists_from_api()
         return token
+
+    def save_user_playlists_from_api(self) -> list[Playlist]:
+        # get playlists
+        while True:
+            try:
+                response = self.spotify.current_user_playlists()
+                break
+            except:
+                print("Keine Internet Verbindung")
+                time.sleep(2)
+        # initilze playlists
+        self.user_playlists = []
+        for playlist in response["items"]:
+            playlist = self.get_playlist(playlist["id"])
+            self.controller.save_playlist(playlist, threaded=True)
+            self.user_playlists.append(playlist)
+        self.user_playlists_as_str = json.dumps([
+            playlist.to_dict(self)
+            for playlist in self.user_playlists
+        ])
+        self.save_user_playlists()
+
+    def set_user_playlists(self):
+        self.user_playlists = []
+        with open(PATH_USER_PLAYLISTS, "r") as f:
+            self.user_playlists_as_str = f.read()
+            for playlist in json.loads(self.user_playlists_as_str):
+                playlist = Playlist.from_dict(playlist)
+                self.controller.save_playlist(playlist, threaded=True)
+                self.user_playlists.append(playlist)
+
+    def save_user_playlists(self):
+        with open(PATH_USER_PLAYLISTS, "w") as f:
+            f.write(self.user_playlists_as_str)
 
     def get_playlist(self, id: str) -> Playlist:
         while True:
@@ -264,37 +352,6 @@ class SpotifyAPI:
     ) -> list[Track]:
         return self._get_recommendation(album.tracks, cnt_recommendations)
 
-    def _get_user_playlists(self) -> list[Playlist]:
-        while True:
-            try:
-                response = self.spotify.current_user_playlists()
-                break
-            except:
-                print("Keine Internet Verbindung")
-                time.sleep(2)
-        playlists = []
-        for playlist in response["items"]:
-            playlist = self.get_playlist(playlist["id"])
-            self.controller.save_playlist(playlist, threaded=True)
-            playlists.append(playlist)
-        return playlists
-
-    def get_user_playlists(
-            self, as_dict=False, spotify_api: "SpotifyAPI" = None
-    ) -> list[Playlist] | str:
-        if self.user_playlists is None:
-            self.user_playlists = self._get_user_playlists()
-        if as_dict:
-            if self.user_playlists_as_dict is None:
-                self.user_playlists_as_dict = [
-                    playlist.to_dict(spotify_api)
-                    for playlist in self.user_playlists
-                ]
-                self.user_playlists_as_dict = json.dumps(
-                    self.user_playlists_as_dict)
-            return self.user_playlists_as_dict
-        return self.user_playlists
-
     def get_album_id_of_track(self, track_id: str) -> str:
         while True:
             try:
@@ -303,10 +360,14 @@ class SpotifyAPI:
                 print("Keine Internet Verbindung")
                 time.sleep(2)
 
-    def get_image_url_of_track(self, track_id: str) -> str:
-        while True:
-            try:
-                return self.spotify.track(track_id)["album"]["images"][0]["url"]
-            except:
-                print("Keine Internet Verbindung")
-                time.sleep(2)
+    def get_image_url_of_track(self, track: Track) -> str:
+        img_url = self.controller.get_album_url(track.id_album)
+        if img_url is None:
+            self.controller.get_album(self.id_album)
+            while True:
+                try:
+                    return self.spotify.track(track.id)["album"]["images"][0]["url"]
+                except:
+                    print("Keine Internet Verbindung")
+                    time.sleep(2)
+        return img_url

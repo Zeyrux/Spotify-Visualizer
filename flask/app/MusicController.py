@@ -101,14 +101,21 @@ class Connection:
 
 
 class MusicController:
+
+    conn: Connection
+    queue: Queue
+    download_thread: Thread
+
     def __init__(self, path_database: Path):
         self.path_database = path_database
         if not self.path_database.is_dir():
             self.path_database.mkdir(parents=True, exist_ok=True)
         self.tracks = Tracks()
 
-        self.conn = Connection()
         self.downloader: "MusicDownloader" | None = None
+
+    def start(self):
+        self.conn = Connection()
         self.queue = Queue()
         self.download_thread = Thread(target=self._worker_save_song,
                                       daemon=True)
@@ -255,6 +262,12 @@ class MusicController:
             album_id, album_name, album_spotify_url,
             songs, album_img_url, album_artists
         )
+
+    def get_album_url(self, album_id: str, conn: Connection = None) -> str:
+        if conn is None:
+            conn = Connection()
+        sql = f"SELECT image_url FROM Album WHERE id = '{album_id}'"
+        return execute(conn, sql, fetch_one=True)[0]
 
     def get_playlists_from_track(self, track_id: str,
                                  conn: Connection = None) -> list[Playlist]:
@@ -442,7 +455,8 @@ class MusicController:
         self.tracks.add_future_track(self.get_random_song(conn=conn))
         return self.check_get_song_return(self.tracks.get_future_song())
 
-    def check_get_song_return(self, track: Track, conn: Connection = None) -> Track:
+    def check_get_song_return(self, track: Track,
+                              conn: Connection = None) -> Track:
         if conn is None:
             conn = Connection()
         if os.path.isfile(os.path.join(self.path_database, track.id_filename)):
@@ -452,7 +466,7 @@ class MusicController:
                 self.save_song(track, conn=conn)
                 return track
             else:
-                time.sleep(0.5)
+                time.sleep(0.1)
                 return self.get_song()
 
     def get_last_song(self, conn: Connection = None) -> Track:

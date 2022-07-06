@@ -1,6 +1,7 @@
 import os
 import secrets
 import json
+import shutil
 from pathlib import Path
 
 from app.MusicDownloader import MusicDownloader
@@ -47,9 +48,21 @@ default_controller = '{"loop_active": false, "fps": 60, "volume": 0.20}'
 
 @app.before_first_request
 def init():
+    # remove _copy and _temp
     for filename in os.listdir(DATABASE_DIR):
         if "_copy" in filename or "_temp" in filename:
             os.remove(os.path.join(DATABASE_DIR, filename))
+    # remove .cache and .spotdl-cache
+    if os.path.isfile(os.path.join("app", ".cache")):
+        os.remove(os.path.join("app", ".cache"))
+    if os.path.isfile(os.path.join("app", ".spotdl-cache")):
+        os.remove(os.path.join("app", ".spotdl-cache"))
+    # remove spotdl-temp and __pycache__
+    if os.path.isdir(os.path.join("app", "spotdl-temp")):
+        shutil.rmtree(os.path.join("app", "spotdl-temp"), ignore_errors=True)
+    if os.path.isdir(os.path.join("app", "__pycache__")):
+        shutil.rmtree(os.path.join("app", "__pycache__"), ignore_errors=True)
+    music_controller.start()
 
 
 @app.route("/favicon.ico")
@@ -74,9 +87,10 @@ def save_login():
     return redirect(url_for("visualizer"))
 
 
-@app.route("/add_playlist", methods=["POST"])
-def add_playlist():
-    return "Hallo"
+@app.route("/refresh", methods=["GET"])
+def refresh():
+    music_downloader.spotify_api.save_user_playlists_from_api()
+    return CLOSE_WINDOW
 
 
 @app.route("/play_track", methods=["GET"])
@@ -92,8 +106,7 @@ def play_track():
 def visualizer():
     if not session.get("token_info", None):
         return redirect(url_for("homepage"))
-    user_playlists = music_downloader.spotify_api.get_user_playlists(
-        as_dict=True, spotify_api=music_downloader.spotify_api)
+    user_playlists = music_downloader.spotify_api.user_playlists_as_str
 
     controller = request.args["controller"] if "controller" in request.args \
         else default_controller
