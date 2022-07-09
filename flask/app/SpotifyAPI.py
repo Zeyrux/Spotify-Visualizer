@@ -269,15 +269,17 @@ class SpotifyAPI:
                 print("Keine Internet Verbindung")
                 time.sleep(2)
         # initilze playlists
-        self.user_playlists = []
+        user_playlists = []
         for playlist in response["items"]:
             playlist = self.get_playlist(playlist["id"])
             self.controller.save_playlist(playlist, threaded=True)
-            self.user_playlists.append(playlist)
-        self.user_playlists_as_str = json.dumps([
+            user_playlists.append(playlist)
+        self.user_playlists = user_playlists
+        user_playlists_as_str = json.dumps([
             playlist.to_dict(self)
             for playlist in self.user_playlists
         ])
+        self.user_playlists_as_str = user_playlists_as_str
         self.save_user_playlists()
 
     def set_user_playlists(self):

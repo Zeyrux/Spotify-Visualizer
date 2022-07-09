@@ -1,7 +1,7 @@
-from concurrent.futures import thread
 import time
 import os
 import random
+import json
 from threading import Thread
 from queue import Queue
 from pathlib import Path
@@ -9,6 +9,9 @@ from pathlib import Path
 from app.SpotifyAPI import Artist, Album, Playlist, Track
 
 from mysql import connector
+
+
+PATH_QUEUE = "queue.queue"
 
 
 def execute(conn: "Connection",
@@ -72,8 +75,9 @@ class Tracks:
             return True
         return self.cur_track > 0
 
-    # def last_song(self) -> Track:
-    #     return self.tracks[self.cur_track - 1]
+    def remove_cur_song(self) -> Track:
+        del self.tracks[self.cur_track]
+        self.cur_track -= 1
 
     def get_cur_song(self) -> Track:
         return self.tracks[self.cur_track]
@@ -116,18 +120,16 @@ class MusicController:
 
     def start(self):
         self.conn = Connection()
-        self.queue = Queue()
+        self.queue = self.read_queue()
         self.download_thread = Thread(target=self._worker_save_song,
                                       daemon=True)
         self.download_thread.start()
 
-    def get_song_from_db(self, song_id, threaded=False, conn: Connection = None) -> Track:
+    def get_song_from_db(self, song_id, threaded=True, conn: Connection = None) -> Track:
         if conn is None:
             conn = Connection()
-        # create song if not existing
-        if not self.is_existing("Song", song_id, conn=conn) \
-                or not os.path.isfile(os.path.join(self.path_database,
-                                                   song_id + ".mp3")):
+        # get song if not existing
+        if not self.is_existing("Song", song_id, conn=conn):
             track = self.downloader.spotify_api.get_track(song_id)
             self.save_song(track, threaded=threaded, conn=conn)
             return track
@@ -137,7 +139,6 @@ class MusicController:
         song_name, spotify_url, album_id, duration_ms = execute(
             conn, sql, fetch_one=True
         )
-
         # song artists
         artists = []
         sql = f"SELECT id_artist FROM SongArtists WHERE id_song = '{song_id}'"
@@ -222,7 +223,7 @@ class MusicController:
         response = execute(conn, sql)
         for song_id, in response:
             songs.append(self.get_song_from_db(
-                song_id, threaded=True, conn=conn))
+                song_id, conn=conn))
 
         return Playlist(playlist_id, playlist_name, spotify_url, songs, image_url)
 
@@ -256,7 +257,7 @@ class MusicController:
         response = execute(conn, sql)
         for song_id in response:
             songs.append(self.get_song_from_db(
-                song_id[0], threaded=True, conn=conn))
+                song_id[0], conn=conn))
 
         return Album(
             album_id, album_name, album_spotify_url,
@@ -286,7 +287,7 @@ class MusicController:
             playlists.append(self.get_playlist(playlist_id[0], conn=conn))
         return playlists
 
-    def get_random_song(self, conn: Connection = None) -> Track:
+    def get_random_song(self, conn: Connection = None, threaded=True) -> Track:
         if conn is None:
             conn = Connection()
         sql = f"SELECT id FROM Song ORDER BY RAND()"
@@ -294,7 +295,7 @@ class MusicController:
         while True:
             response = execute(conn, sql)
             for track_id in response:
-                return self.get_song_from_db(track_id[0], conn=conn)
+                return self.get_song_from_db(track_id[0], conn=conn, threaded=threaded)
 
             # if not song exists in database, wait until one is added
             conn = Connection()
@@ -413,8 +414,6 @@ class MusicController:
                   f"VALUES ('{track.id}', '{playlist.id}')"
             execute(conn, sql)
 
-        # conn.connection.commit()
-
     def get_song(self, conn: Connection = None) -> Track:
         if conn is None:
             conn = Connection()
@@ -425,7 +424,8 @@ class MusicController:
 
         # return random song
         if not self.tracks.cur_song_exists():
-            self.tracks.add_future_track(self.get_random_song(conn=conn))
+            self.tracks.add_future_track(
+                self.get_random_song(conn=conn))
             return self.check_get_song_return(self.tracks.get_future_song())
 
         cur_track = self.tracks.get_cur_song()
@@ -452,7 +452,8 @@ class MusicController:
                 return self.check_get_song_return(self.tracks.get_future_song())
 
         # if not song found: return random
-        self.tracks.add_future_track(self.get_random_song(conn=conn))
+        self.tracks.add_future_track(
+            self.get_random_song(conn=conn))
         return self.check_get_song_return(self.tracks.get_future_song())
 
     def check_get_song_return(self, track: Track,
@@ -462,11 +463,14 @@ class MusicController:
         if os.path.isfile(os.path.join(self.path_database, track.id_filename)):
             return track
         else:
+            self.save_song(track, threaded=True)
             if self.tracks.plays_playlist:
                 self.save_song(track, conn=conn)
                 return track
             else:
                 time.sleep(0.1)
+                if self.tracks.cur_song_exists():
+                    self.tracks.remove_cur_song()
                 return self.get_song()
 
     def get_last_song(self, conn: Connection = None) -> Track:
@@ -475,3 +479,21 @@ class MusicController:
         if not self.tracks.last_song_exists():
             self.tracks.add_last_track(self.get_random_song(conn=conn))
         return self.tracks.get_last_song()
+
+    def read_queue(self) -> Queue:
+        queue = Queue()
+        if os.path.isfile(PATH_QUEUE):
+            with open(PATH_QUEUE, 'r') as f:
+                for line in f:
+                    track = Track.from_dict(json.loads(line))
+                    queue.put(track)
+        return queue
+
+    def save_queue(self):
+        with open(PATH_QUEUE, "w") as f:
+            while not self.queue.empty():
+                track = self.queue.get()
+                print(track)
+                track = json.dumps(track.to_dict(self.downloader.spotify_api))
+                f.write(f"{track}\n")
+                self.queue.task_done()

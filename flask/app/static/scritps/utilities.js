@@ -37,6 +37,22 @@ export function create_form(form_id, action, submit_value, create_hidden, hidden
 }
 
 
+export function create_form_without_hidden(action, _blank, submit_value) {
+    // create form
+    let form = document.createElement("form");
+    form.action = action;
+    if (_blank)
+        form.target = "_blank";
+    form.method = "get";
+    // create submit
+    let submit = document.createElement("input");
+    submit.type = "submit";
+    submit.value = submit_value;
+    form.appendChild(submit);
+    return form;
+}
+
+
 export function set_true(element) {
     element.style.background = "rgb(154, 204, 144)";
 }
@@ -100,7 +116,7 @@ export function create_slider(min, step, max, value, id) {
     slider.max = max;
     slider.value = value;
     slider.id = id;
-    return slider
+    return slider;
 }
 
 
@@ -111,7 +127,7 @@ export function seconds_to_string(seconds) {
         minutes += 1;
         seconds -= 60
     }
-    if (seconds < 9)
+    if (seconds <= 9)
         seconds = "0" + seconds;
     return minutes + ":" + seconds;
 }
@@ -270,4 +286,8 @@ export function create_user_tracks() {
     });
 
     return div;
+}
+
+export function create_reload() {
+    return create_form_without_hidden("/refresh", true, "🗘");
 }

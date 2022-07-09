@@ -2,6 +2,7 @@ import os
 import secrets
 import json
 import shutil
+import atexit
 from pathlib import Path
 
 from app.MusicDownloader import MusicDownloader
@@ -46,22 +47,33 @@ music_controller.downloader = music_downloader
 default_controller = '{"loop_active": false, "fps": 60, "volume": 0.20}'
 
 
+atexit.register(music_controller.save_queue)
+
+
 @app.before_first_request
 def init():
     # remove _copy and _temp
     for filename in os.listdir(DATABASE_DIR):
-        if "_copy" in filename or "_temp" in filename:
+        if filename.endswith("_copy.mp3") or filename.endswith("_temp.mp3"):
             os.remove(os.path.join(DATABASE_DIR, filename))
+    for filename in os.listdir("./"):
+        # remove not formatted songs
+        if filename.endswith(".mp3"):
+            os.remove(filename)
+        # remove tracking files
+        if filename.endswith(".spotdlTrackingFile"):
+            os.remove(filename)
+
     # remove .cache and .spotdl-cache
-    if os.path.isfile(os.path.join("app", ".cache")):
-        os.remove(os.path.join("app", ".cache"))
-    if os.path.isfile(os.path.join("app", ".spotdl-cache")):
-        os.remove(os.path.join("app", ".spotdl-cache"))
+    if os.path.isfile(".cache"):
+        os.remove(".cache")
+    if os.path.isfile(".spotdl-cache"):
+        os.remove(".spotdl-cache")
     # remove spotdl-temp and __pycache__
-    if os.path.isdir(os.path.join("app", "spotdl-temp")):
-        shutil.rmtree(os.path.join("app", "spotdl-temp"), ignore_errors=True)
-    if os.path.isdir(os.path.join("app", "__pycache__")):
-        shutil.rmtree(os.path.join("app", "__pycache__"), ignore_errors=True)
+    if os.path.isdir("spotdl-temp"):
+        shutil.rmtree("spotdl-temp", ignore_errors=True)
+    if os.path.isdir("__pycache__"):
+        shutil.rmtree("__pycache__", ignore_errors=True)
     music_controller.start()
 
 

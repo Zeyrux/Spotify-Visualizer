@@ -47,7 +47,7 @@ class MusicDownloader:
         # normalize volume
         os.system(
             f"ffmpeg -y -loglevel quiet -i "
-            f"{cpy} -af 'volume=1dB' {cpy}"
+            f"\"{cpy}\" -af 'volume=1dB' \"{cpy}\""
         )
         os.rename(cpy, final)
         os.remove(temp)
@@ -63,14 +63,24 @@ class MusicDownloader:
         if os.path.isfile(song_path):
             return
         # move song
-        os.system(f"spotdl {track.spotify_url}")
+        found_track = False
+        try:
+            os.system(f"spotdl {track.spotify_url}")
+        except PermissionError:
+            pass
         try:
             shutil.move(track.filename, song_path)
+            found_track = True
+        except OSError:
+            for filename in os.listdir("./"):
+                if track.name in filename:
+                    shutil.move(filename, song_path)
+                    found_track = True
+                    break
+        if found_track:
             # format song
             self._format_song(track, self.song_dir)
             # add song data to database
             self.controller.save_song(track)
             print("Downloaded:", track.filename)
-        except OSError as e:
-            print(f"Already downloaded {track.name}: {e}")
         return track

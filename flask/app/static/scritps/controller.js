@@ -1,4 +1,4 @@
-import { create_form, create_button, create_checkable_button, create_slider_volume, create_slider_duration, seconds_to_string, create_fps, create_user_playlists, create_user_tracks } from "./utilities.js";
+import { create_form, create_button, create_checkable_button, create_slider_volume, create_slider_duration, seconds_to_string, create_fps, create_user_playlists, create_user_tracks, create_reload } from "./utilities.js";
 import { controller, track } from "./init.js";
 
 export var gradientBars;
@@ -55,6 +55,7 @@ function init() {
 	controlls.appendChild(create_slider_volume(audio.volume));
 
 	// add playlists and tracks
+	user_palylists.appendChild(create_reload())
 	user_palylists.appendChild(create_user_playlists());
 	user_palylists.appendChild(create_user_tracks());
 
