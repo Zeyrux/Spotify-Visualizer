@@ -118,7 +118,7 @@ def play_track():
 def visualizer():
     if not session.get("token_info", None):
         return redirect(url_for("homepage"))
-    user_playlists = music_downloader.spotify_api.user_playlists_as_str
+    user_playlists = music_downloader.spotify_api.user_playlists_as_json
 
     controller = request.args["controller"] if "controller" in request.args \
         else default_controller

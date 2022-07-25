@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS Playlist (
     spotify_url VARCHAR(255) NOT NULL UNIQUE,
     image_url VARCHAR(255) NOT NULL
 );
-CREATE TABLE IF NOT EXISTS Song (
+CREATE TABLE IF NOT EXISTS Track (
     id VARCHAR(22) NOT NULL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     spotify_url VARCHAR(255) NOT NULL UNIQUE,
@@ -31,15 +31,15 @@ CREATE TABLE IF NOT EXISTS AlbumArtists (
     FOREIGN KEY (id_album) REFERENCES Album(id),
     FOREIGN KEY (id_artist) REFERENCES Artist(id)
 );
-CREATE TABLE IF NOT EXISTS SongArtists (
-    id_song VARCHAR(22) NOT NULL,
+CREATE TABLE IF NOT EXISTS TrackArtists (
+    id_track VARCHAR(22) NOT NULL,
     id_artist VARCHAR(22) NOT NULL,
-    FOREIGN KEY (id_song) REFERENCES Song(id),
+    FOREIGN KEY (id_track) REFERENCES Track(id),
     FOREIGN KEY (id_artist) REFERENCES Artist(id)
 );
-CREATE TABLE IF NOT EXISTS SongPlaylist (
-    id_song VARCHAR(22) NOT NULL,
+CREATE TABLE IF NOT EXISTS TrackPlaylist (
+    id_track VARCHAR(22) NOT NULL,
     id_playlist VARCHAR(22) NOT NULL,
-    FOREIGN KEY (id_song) REFERENCES Song(id),
+    FOREIGN KEY (id_track) REFERENCES Track(id),
     FOREIGN KEY (id_playlist) REFERENCES Playlist(id)
 );

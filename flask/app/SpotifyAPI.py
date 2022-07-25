@@ -231,7 +231,7 @@ class Playlist:
 class SpotifyAPI:
 
     user_playlists: list[Playlist] | None = None
-    user_playlists_as_str: str | None = None
+    user_playlists_as_json: str | None = None
 
     def __init__(self, client_id: str, client_secret: str,
                  redirect_uri: str, controller_pt: "MusicController"):
@@ -279,21 +279,21 @@ class SpotifyAPI:
             playlist.to_dict(self)
             for playlist in self.user_playlists
         ])
-        self.user_playlists_as_str = user_playlists_as_str
+        self.user_playlists_as_json = user_playlists_as_str
         self.save_user_playlists()
 
     def set_user_playlists(self):
         self.user_playlists = []
         with open(PATH_USER_PLAYLISTS, "r") as f:
-            self.user_playlists_as_str = f.read()
-            for playlist in json.loads(self.user_playlists_as_str):
+            self.user_playlists_as_json = f.read()
+            for playlist in json.loads(self.user_playlists_as_json):
                 playlist = Playlist.from_dict(playlist)
                 self.controller.save_playlist(playlist, threaded=True)
                 self.user_playlists.append(playlist)
 
     def save_user_playlists(self):
         with open(PATH_USER_PLAYLISTS, "w") as f:
-            f.write(self.user_playlists_as_str)
+            json.dumps(self.user_playlists_as_json, f, indent=4)
 
     def get_playlist(self, id: str) -> Playlist:
         while True:

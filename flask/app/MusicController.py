@@ -493,7 +493,6 @@ class MusicController:
         with open(PATH_QUEUE, "w") as f:
             while not self.queue.empty():
                 track = self.queue.get()
-                print(track)
-                track = json.dumps(track.to_dict(self.downloader.spotify_api))
-                f.write(f"{track}\n")
+                track = json.dumps(track.to_dict(
+                    self.downloader.spotify_api), f, indent=4)
                 self.queue.task_done()
