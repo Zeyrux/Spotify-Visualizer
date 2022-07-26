@@ -1,17 +1,8 @@
-import mimetypes
-
-from app.backend import app
-
-from flask_socketio import SocketIO
-
-
-mimetypes.add_type('application/javascript', '.js')
+from app.backend import App
 
 
 def main():
-    app.env = "development"
-    socket_io = SocketIO(app)
-    socket_io.run(app, host="localhost", port=5000)
+    App.run()
 
 
 if __name__ == '__main__':

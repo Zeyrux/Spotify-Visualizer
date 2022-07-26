@@ -30,14 +30,21 @@ class Connection:
 
 
 class Database:
-    def __init__(self, path_database: str):
-        self.PATH_DATABASE = path_database
+    def __init__(self, app: "App"):
+        self.app = app
 
     ###########################################################################
-    ############################## GET ########################################
+    ##################### GET Playlist Album Track Artist #####################
     ###########################################################################
 
     def get_playlist(self, playlist_id: str, conn: Connection = None) -> Playlist:
+        if conn is None:
+            conn = Connection()
+        if not self.is_existing("Playlist", playlist_id, conn=conn):
+            playlist = self.spotify_api.get_playlist(playlist_id)
+            self.save_playlist(playlist, conn=conn)
+            return playlist
+
         sql = f"SELECT name, spotify_url, image_url FROM Playlist " \
               f"WHERE id = '{playlist_id}'"
         playlist_name, spotify_url, image_url = execute(
@@ -57,6 +64,10 @@ class Database:
     def get_album(self, album_id: str, conn: Connection = None) -> Album:
         if conn is None:
             conn = Connection()
+        if not self.is_existing("Album", album_id, conn=conn):
+            album = self.app.spotify_api.get_album(album_id)
+            self.save_album(album, conn=conn)
+            return album
 
         sql = f"SELECT name, spotify_url, image_url FROM Album " \
               f"WHERE id = '{album_id}'"
@@ -89,6 +100,11 @@ class Database:
     def get_track(self, track_id: str, conn: Connection = None) -> Track:
         if conn is None:
             conn = Connection()
+        if not self.is_existing("Track", track_id, conn=conn):
+            track = self.downloader.spotify_api.get_track(track_id)
+            self.save_track(track, conn=conn)
+            return track
+
         # track
         sql = f"SELECT name, spotify_url, id_album, duration_ms " \
               f"FROM Track WHERE id = '{track_id}'"
@@ -97,7 +113,7 @@ class Database:
         )
         # track artists
         artists = []
-        sql = f"SELECT id_artist FROM SongArtists WHERE id_track = '{track_id}'"
+        sql = f"SELECT id_artist FROM TrackArtists WHERE id_track = '{track_id}'"
         response = execute(conn, sql)
         for artist_id in response:
             artists.append(self.get_artist(artist_id[0], conn=conn))
@@ -109,10 +125,19 @@ class Database:
     def get_artist(self, artist_id: str, conn: Connection = None) -> Artist:
         if conn is None:
             conn = Connection()
+        if not self.is_existing("Artist", artist_id, conn=conn):
+            artist = self.app.spotify_api.get_artist(artist_id)
+            self.save_artist(artist, conn=conn)
+            return artist
+
         sql = f"SELECT name, spotify_url FROM Artist " \
               f"WHERE id = '{artist_id}'"
         artist_name, artist_spotify_url = execute(conn, sql, fetch_one=True)
         return Artist(artist_id, artist_name, artist_spotify_url)
+
+    ###########################################################################
+    ################################ GET OTHER ################################
+    ###########################################################################
 
     def get_random_track(self, conn: Connection = None) -> Track:
         if conn is None:
@@ -122,11 +147,37 @@ class Database:
         while True:
             response = execute(conn, sql, fetch_one=True)
             if response is not None:
-                self.get_track(response, conn=conn)
+                return self.get_track(response[0], conn=conn)
             time.sleep(0.1)
 
+    def get_album_url(self, album_id: str, conn: Connection = None) -> str:
+        if conn is None:
+            conn = Connection()
+        sql = f"SELECT image_url FROM Album WHERE id = '{album_id}'"
+        response = execute(conn, sql, fetch_one=True)
+        if response is None:
+            return response
+        return execute(conn, sql, fetch_one=True)[0]
+
+    def get_playlists_from_track(self, track_id: str,
+                                 conn: Connection = None) -> list[Playlist]:
+        if conn is None:
+            conn = Connection()
+
+        if not self.is_existing("Track", track_id, conn=conn):
+            track = self.downloader.spotify_api.get_track(track_id)
+            self.save_track(track, conn=conn)
+
+        playlists = []
+        sql = f"SELECT id_playlist FROM TrackPlaylist " \
+              f"WHERE id_track = '{track_id}'"
+        response = execute(conn, sql)
+        for playlist_id in response:
+            playlists.append(self.get_playlist(playlist_id[0], conn=conn))
+        return playlists
+
     ##########################################################################
-    ############################## EXISTS ####################################
+    ################################# EXISTS #################################
     ##########################################################################
 
     def playlist_exists(self, playlist: Playlist, conn: Connection = None) -> bool:
@@ -152,8 +203,8 @@ class Database:
         # check every track
         for track in super.tracks:
             # check if track exists
-            if not self.is_existing("Track", track.id, conn=conn) \
-                    or not os.path.isfile(os.path.join(self.path_database,
+            if not self.track_exists(track.id) \
+                    or not os.path.isfile(os.path.join(self.DATABASE_DIR,
                                                        track.id_filename)):
                 return False
             # link tracks
@@ -162,6 +213,25 @@ class Database:
                 f"VALUES ('{track.id}', '{super.id}')"
             execute(conn, sql)
         return True
+
+    def track_exists(self, track: Track, conn: Connection = None) -> bool:
+        if conn is None:
+            conn = Connection()
+        if not self.is_existing("Track", track.id, conn=conn):
+            return False
+        for artist in track.artists:
+            if not self.artist_exists(artist, conn=conn):
+                return False
+            sql = f"INSERT IGNORE INTO TrackArtists " \
+                f"(id_track, id_artist) " \
+                f"VALUES ('{track.id}', '{artist.id}')"
+            execute(conn, sql)
+        return True
+
+    def artist_exists(self, artist: Artist, conn: Connection = None) -> bool:
+        if conn is None:
+            conn = Connection()
+        return self.is_existing("Artist", artist.id, conn=conn)
 
     def is_existing(self, table: str, id: str,
                     conn: Connection = None) -> bool:
@@ -172,7 +242,7 @@ class Database:
         return exists
 
     ##########################################################################
-    ############################## SAVE ######################################
+    ################################## SAVE ##################################
     ##########################################################################
 
     def save_playlist(self, playlist: Playlist,
@@ -234,11 +304,14 @@ class Database:
             conn = Connection()
         if not force_insert:
             if self.is_existing("Track", track.id, conn=conn) \
-                    or not os.path.isfile(os.path.join(self.PATH_DATABASE, track.id_filename)):
+                    and os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
                 return
+        if not os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
+            self.app.downloader.put_queue(track)
+
         # save track
         track_name = track.name.replace("'", "\\'")
-        sql = f"INSERT IGNORE INTO Song " \
+        sql = f"INSERT IGNORE INTO Track " \
               f"(id, name, spotify_url, id_album, duration_ms) VALUES " \
               f"('{track.id}', '{track_name}', '{track.spotify_url}', " \
               f"'{track.id_album}', '{track.duration_ms}')"
@@ -248,9 +321,9 @@ class Database:
         for artist in track.artists:
             self.save_artist(artist, force_insert=force_insert, conn=conn)
 
-        # link song to artists
+        # link track to artists
         for artist in track.artists:
-            sql = f"INSERT IGNORE INTO SongArtists (id_song, id_artist) " \
+            sql = f"INSERT IGNORE INTO TrackArtists (id_track, id_artist) " \
                   f"VALUES ('{track.id}', '{artist.id}')"
             execute(conn, sql)
 
@@ -259,7 +332,7 @@ class Database:
             if self.is_existing("Album", track.id_album, conn=conn):
                 return
         self.save_album(
-            track.id_album, conn=conn)
+            track.album(self), conn=conn)
 
     def save_artist(self, artist: Artist, force_insert: bool = False, conn: Connection = None):
         if conn is None:

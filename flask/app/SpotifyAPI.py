@@ -2,13 +2,11 @@ import os
 import time
 import random
 import json
+import traceback
 from dataclasses import dataclass, field
 
-from spotipy.oauth2 import SpotifyOAuth
 from spotipy import Spotify
-
-
-PATH_USER_PLAYLISTS = "user_playlists.playlists"
+from spotipy.oauth2 import SpotifyOAuth
 
 
 def replace_illegal_chars(path: str) -> str:
@@ -117,14 +115,14 @@ class Track:
             "image_url": self.image_url
         }
 
-    def album(self, controller: "MusicController") -> "Album":
+    def album(self, database: "Database") -> "Album":
         if self.album_obj is None:
-            self.album_obj = controller.get_album(self.id_album)
+            self.album_obj = database.get_album(self.id_album)
         return self.album_obj
 
-    def playlists(self, controller: "MusicController") -> list["Playlist"]:
+    def playlists(self, database: "MusicController") -> list["Playlist"]:
         if self.playlists_obj is None:
-            self.playlists_obj = controller.get_playlists_from_track(self.id)
+            self.playlists_obj = database.get_playlists_from_track(self.id)
         return self.playlists_obj
 
 
@@ -141,7 +139,7 @@ class Album:
         return self.name
 
     @staticmethod
-    def from_response(response: dict) -> "Album":
+    def from_response(response: dict, spotify_api: "SpotifyAPI") -> "Album":
         album_artists = []
         for album_artist in response["artists"]:
             album_artists.append(Artist(
@@ -153,13 +151,20 @@ class Album:
         for track in response["tracks"]["items"]:
             tracks.append(Track.from_response(track, response["id"]))
 
+        if len(response["images"]) == 0:
+            for track in tracks:
+                album_image = spotify_api.get_image_url_of_track(track)
+                if album_image is not None:
+                    break
+        else:
+            album_image = response["images"][0]["url"]
+
         album = Album(response["id"],
                       response["name"],
                       response["external_urls"]["spotify"],
                       tracks,
-                      response["images"][0]["url"],
+                      album_image,
                       album_artists)
-
         return album
 
     @staticmethod
@@ -231,21 +236,20 @@ class Playlist:
 class SpotifyAPI:
 
     user_playlists: list[Playlist] | None = None
-    user_playlists_as_json: str | None = None
+    user_playlists_as_list: str | None = None
 
-    def __init__(self, client_id: str, client_secret: str,
-                 redirect_uri: str, controller_pt: "MusicController"):
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_uri
-        self.controller = controller_pt
+    def __init__(self, app: "App"):
+        self.app = app
         self.spotify: Spotify | None = None
+        self.client_id = open(self.app.SPOTIFY_CLT_ID_PATH, "r").read()
+        self.client_secret = open(self.app.SPOTIFY_CLT_SECRET_PATH, "r").read()
 
     def get_oauth(self) -> SpotifyOAuth:
         return SpotifyOAuth(client_id=self.client_id,
                             client_secret=self.client_secret,
-                            scope="user-read-currently-playing",
-                            redirect_uri=self.redirect_uri)
+                            scope=f"playlist-read-private,"
+                                  "playlist-read-collaborative",
+                            redirect_uri=self.app.REDIRECT_URL)
 
     def authorize(self, code: str) -> dict:
         # authorize the user
@@ -253,7 +257,7 @@ class SpotifyAPI:
         self.spotify = Spotify(auth=token["access_token"],
                                requests_timeout=1.5, retries=10)
         # initlize user playlists
-        if os.path.isfile(PATH_USER_PLAYLISTS):
+        if os.path.isfile(self.app.PATH_USER_PLAYLISTS):
             self.set_user_playlists()
         else:
             self.save_user_playlists_from_api()
@@ -265,58 +269,57 @@ class SpotifyAPI:
             try:
                 response = self.spotify.current_user_playlists()
                 break
-            except:
-                print("Keine Internet Verbindung")
+            except Exception:
+                print(traceback.print_exc())
                 time.sleep(2)
         # initilze playlists
         user_playlists = []
         for playlist in response["items"]:
             playlist = self.get_playlist(playlist["id"])
-            self.controller.save_playlist(playlist, threaded=True)
+            self.app.database.save_playlist(playlist)
             user_playlists.append(playlist)
         self.user_playlists = user_playlists
-        user_playlists_as_str = json.dumps([
+        self.user_playlists_as_list = json.dumps([
             playlist.to_dict(self)
             for playlist in self.user_playlists
         ])
-        self.user_playlists_as_json = user_playlists_as_str
         self.save_user_playlists()
 
     def set_user_playlists(self):
         self.user_playlists = []
-        with open(PATH_USER_PLAYLISTS, "r") as f:
-            self.user_playlists_as_json = f.read()
-            for playlist in json.loads(self.user_playlists_as_json):
+        with open(self.app.PATH_USER_PLAYLISTS, "r") as f:
+            self.user_playlists_as_list = f.read()
+            for playlist in json.loads(self.user_playlists_as_list):
                 playlist = Playlist.from_dict(playlist)
-                self.controller.save_playlist(playlist, threaded=True)
+                self.app.database.save_playlist(playlist)
                 self.user_playlists.append(playlist)
 
     def save_user_playlists(self):
-        with open(PATH_USER_PLAYLISTS, "w") as f:
-            json.dumps(self.user_playlists_as_json, f, indent=4)
+        with open(self.app.PATH_USER_PLAYLISTS, "w") as f:
+            json.dump(json.loads(self.user_playlists_as_list), f, indent=4)
 
     def get_playlist(self, id: str) -> Playlist:
         while True:
             try:
                 return Playlist.from_response(self.spotify.playlist(id))
-            except:
-                print("Keine Internet Verbindung")
+            except Exception:
+                print(traceback.print_exc())
                 time.sleep(2)
 
     def get_album(self, id: str) -> Album:
         while True:
             try:
-                return Album.from_response(self.spotify.album(id))
-            except:
-                print("Keine Internet Verbindung")
+                return Album.from_response(self.spotify.album(id), self)
+            except Exception:
+                print(traceback.print_exc())
                 time.sleep(2)
 
     def get_track(self, id: str) -> Track:
         while True:
             try:
                 return Track.from_response(self.spotify.track(id))
-            except:
-                print("Keine Internet Verbindung")
+            except Exception:
+                print(traceback.print_exc())
                 time.sleep(2)
 
     def _get_recommendation(self, tracks: list[Track],
@@ -340,8 +343,8 @@ class SpotifyAPI:
                     self.spotify.recommendations(seed_tracks=seed_tracks,
                                                  limit=1)
                 )
-            except:
-                print("Keine Internet Verbindung")
+            except Exception:
+                print(traceback.print_exc())
                 time.sleep(2)
 
     def get_recommendations_for_playlist(
@@ -358,18 +361,19 @@ class SpotifyAPI:
         while True:
             try:
                 return self.spotify.track(track_id)["album"]["id"]
-            except:
-                print("Keine Internet Verbindung")
+            except Exception:
+                print(traceback.print_exc())
                 time.sleep(2)
 
-    def get_image_url_of_track(self, track: Track) -> str:
-        img_url = self.controller.get_album_url(track.id_album)
+    def get_image_url_of_track(self, track: Track) -> str | None:
+        img_url = self.app.database.get_album_url(track.id_album)
         if img_url is None:
-            self.controller.get_album(self.id_album)
             while True:
                 try:
                     return self.spotify.track(track.id)["album"]["images"][0]["url"]
-                except:
-                    print("Keine Internet Verbindung")
+                except IndexError:
+                    return
+                except Exception:
+                    print(traceback.print_exc())
                     time.sleep(2)
         return img_url

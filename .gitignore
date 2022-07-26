@@ -6,3 +6,6 @@ test.py
 .cache
 .spotdl-cache
 __pycache__
+queue.queue
+user_playlists.json
+ffmpeg.exe
