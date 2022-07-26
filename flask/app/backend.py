@@ -3,6 +3,7 @@ import secrets
 import json
 import shutil
 import atexit
+import mimetypes
 from pathlib import Path
 
 from app.Controller import Controller
@@ -19,7 +20,6 @@ from flask import (
     redirect,
     send_from_directory
 )
-import mimetypes
 from flask_socketio import SocketIO
 
 
@@ -81,8 +81,9 @@ class App:
         # remove spotdl-temp and __pycache__
         if os.path.isdir("spotdl-temp"):
             shutil.rmtree("spotdl-temp", ignore_errors=True)
-        if os.path.isdir("__pycache__"):
-            shutil.rmtree("__pycache__", ignore_errors=True)
+        if os.path.isdir(os.path.join("app", "__pycache__")):
+            shutil.rmtree(os.path.join("app", "__pycache__"),
+                          ignore_errors=True)
 
     def register_routes(self):
         @self.app.route("/favicon.ico")

@@ -97,8 +97,10 @@ class Controller:
     def check_track(self, function) -> Track:
         track = function()
         if self.player.force_play_next:
-            return Track
-        while not os.path.exists(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
+            if not os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
+                self.app.downloader.download_track(track)
+            return track
+        while not os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
             self.app.downloader.put_queue(track)
             time.sleep(0.1)
             track = function()

@@ -82,7 +82,7 @@ class Database:
         response = execute(conn, sql)
         for album_artist_id in response:
             album_artists.append(
-                self.get_artists_from_db(album_artist_id[0], conn=conn)
+                self.get_artist(album_artist_id[0], conn=conn)
             )
 
         # tracks

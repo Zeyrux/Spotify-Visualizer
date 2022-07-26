@@ -276,7 +276,7 @@ class SpotifyAPI:
         user_playlists = []
         for playlist in response["items"]:
             playlist = self.get_playlist(playlist["id"])
-            self.app.database.save_playlist(playlist)
+            self.app.database.save_playlist(playlist, force_insert=True)
             user_playlists.append(playlist)
         self.user_playlists = user_playlists
         self.user_playlists_as_list = json.dumps([
