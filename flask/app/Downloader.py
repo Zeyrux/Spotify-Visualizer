@@ -58,6 +58,8 @@ class Downloader:
         while not self.queue.empty():
             tracks.append(self.queue.get().to_dict(self.app.spotify_api))
             self.queue.task_done()
+        if len(tracks) == 0:
+            return
         with open(self.app.PATH_QUEUE, "w") as f:
             json.dump(tracks, f, indent=4)
         print("TASK DONE")
