@@ -266,9 +266,13 @@ export function create_user_tracks() {
         div_buttons.className = "playlist_details_buttons";
         // play button
         let button_play = create_form(undefined, "/play_track", "▶", true, playlist.id, "playlist_id");
+        // download button
+        let button_download = create_form(undefined, "/download_playlist", "💾", true, playlist.id, "playlist_id");
         // add to div
+        div_buttons.appendChild(button_play);
+        div_buttons.appendChild(button_download);
         div_playlist_details.appendChild(image);
-        div_playlist_details.appendChild(button_play);
+        div_playlist_details.appendChild(div_buttons);
         // p
         let p = document.createElement("p");
         p.innerHTML = playlist.name;
@@ -352,9 +356,13 @@ export function create_user_track_details() {
             p.innerHTML = track.name;
             p.classList.add("track_part_details");
 
+            // create download button
+            let button_download = create_form(undefined, "/download_track", "⭳", true, track.id, "track_id");
+
             // add everything to div
             div_track.appendChild(image);
             div_track.appendChild(p);
+            div_track.appendChild(button_download);
             div.appendChild(div_track);
         });
     });

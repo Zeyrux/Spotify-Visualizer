@@ -1,25 +1,28 @@
 import os
 import shutil
 import json
+from urllib.request import urlretrieve
 from pathlib import Path
 from threading import Thread
 from queue import Queue
 
 from app.SpotifyAPI import Track
 
+import eyed3
+from eyed3.id3.frames import ImageFrame
+
 
 class Downloader:
 
-    queue: Queue
     queue_items_ids = []
     download_thread: Thread
     running = False
 
     def __init__(self, app: "App"):
         self.app = app
+        self.queue = Queue()
 
     def start(self):
-        self.queue = self.get_queue()
         self.download_thread = Thread(target=self._worker_save_track,
                                       daemon=True)
         self.download_thread.start()
@@ -38,16 +41,13 @@ class Downloader:
             self.queue.task_done()
             self.queue_items_ids.remove(track.id)
 
-    def get_queue(self) -> Queue:
-        queue = Queue()
+    def get_queue(self):
         if os.path.isfile(self.app.PATH_QUEUE):
             with open(self.app.PATH_QUEUE, 'r') as f:
                 tracks = json.load(f)
                 for track in tracks:
                     track = Track.from_dict(track)
-                    queue.put(track)
-                    self.queue_items_ids.append(track.id)
-        return queue
+                    self.put_queue(track)
 
     def save_queue(self):
         tracks = []
@@ -62,10 +62,9 @@ class Downloader:
             json.dump(tracks, f, indent=4)
         print("TASK DONE")
 
-    def _format_track(self, track: "Track", dir: Path):
-        cpy = os.path.join(dir, track.copy_filename)
-        temp = os.path.join(dir, track.temp_filename)
-        final = os.path.join(dir, track.id_filename)
+    def _format_track(self, track: "Track"):
+        cpy = os.path.join(self.app.DATABASE_DIR, track.copy_filename)
+        temp = os.path.join(self.app.DATABASE_DIR, track.temp_filename)
         # change codec
         os.system(
             f"ffmpeg -y -loglevel quiet -i "
@@ -86,8 +85,31 @@ class Downloader:
             f"ffmpeg -y -loglevel quiet -i "
             f"\"{cpy}\" -af 'volume=1dB' \"{cpy}\""
         )
-        os.rename(cpy, final)
         os.remove(temp)
+
+    def _add_song_data(self, track: "Track"):
+        file = eyed3.load(os.path.join(
+            self.app.DATABASE_DIR, track.copy_filename))
+        if file.tag is None:
+            file.initTag()
+
+        try:
+            urlretrieve(track.image_url, f"{track.id}.jpg")
+            file.tag.images.set(
+                ImageFrame.FRONT_COVER,
+                open(f"{track.id}.jpg", "rb").read(),
+                "image/jpeg"
+            )
+        except Exception:
+            pass
+
+        file.tag.title = track.name
+        file.tag.artist = "; ".join([artist.name for artist in track.artists])
+        file.tag.album = track.album(self.app.database).name
+        file.tag.album_artist = "; ".join(
+            [artist.name for artist in track.album(self.app.database).artists]
+        )
+        file.tag.save()
 
     def download_track(self, track: "Track") -> "Track":
         if os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
@@ -118,8 +140,24 @@ class Downloader:
                     break
         if found_track:
             # format track
-            self._format_track(track, self.app.DATABASE_DIR)
+            self._format_track(track)
+            self._add_song_data(track)
+            os.rename(
+                os.path.join(self.app.DATABASE_DIR, track.copy_filename),
+                os.path.join(self.app.DATABASE_DIR, track.id_filename)
+            )
             # add track data to database
             self.app.database.save_track(track)
             print("Downloaded:", track.filename)
         return track
+
+    def prepare_downloaded_track(self, track: "Track"):
+        copy = os.path.join(self.app.DATABASE_DIR, track.copy_filename)
+        final = os.path.join(self.app.DATABASE_DIR, track.id_filename)
+        file = eyed3.load(os.path.join(
+            self.app.DATABASE_DIR, track.id_filename))
+        if file.tag is None:
+            shutil.copy(final, copy)
+            self._add_song_data(track)
+            os.remove(final)
+            shutil.move(copy, final)

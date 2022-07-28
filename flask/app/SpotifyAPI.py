@@ -65,10 +65,7 @@ class Track:
         self.id_filename = f"{self.id}.mp3"
         self.copy_filename = f"{self.id}_copy.mp3"
         self.temp_filename = f"{self.id}_temp.mp3"
-        self.filename = replace_illegal_chars(
-            f"{', '.join([str(artist) for artist in self.artists])} - "
-            f"{self.name}.mp3"
-        )
+        self.filename = replace_illegal_chars(f"{self.name}.mp3")
 
     def __eq__(self, other: "Track") -> bool:
         return True if other.id == self.id else False

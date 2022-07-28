@@ -18,7 +18,8 @@ from flask import (
     render_template,
     url_for,
     redirect,
-    send_from_directory
+    send_from_directory,
+    send_file
 )
 from flask_socketio import SocketIO
 
@@ -61,13 +62,18 @@ class App:
         socket_io.run(app.app, host="localhost", port=5000, debug=True)
 
     def remove_files(self):
+        if not os.path.isdir(self.DATABASE_DIR):
+            os.mkdir(self.DATABASE_DIR)
         # remove _copy and _temp
         for filename in os.listdir(self.DATABASE_DIR):
             if filename.endswith("_copy.mp3") or filename.endswith("_temp.mp3"):
                 os.remove(os.path.join(self.DATABASE_DIR, filename))
         for filename in os.listdir("./"):
             # remove not formatted songs
-            if filename.endswith(".mp3"):
+            if filename.endswith(".mp3") \
+                    or filename.endswith(".spotdlTrackingFile") \
+                or filename.endswith(".zip") \
+                    or filename.endswith(".jpg"):
                 os.remove(filename)
             # remove tracking files
             if filename.endswith(".spotdlTrackingFile"):
@@ -104,6 +110,38 @@ class App:
             code = request.args.get("code")
             session["token_info"] = self.spotify_api.authorize(code)
             return redirect(url_for("visualizer"))
+
+        @self.app.route("/download_track", methods=["GET"])
+        def download_track():
+            track_id = request.args.get("track_id")
+            track = self.database.get_track(track_id)
+            if not os.path.isfile(os.path.join(self.DATABASE_DIR, track.id_filename)):
+                self.downloader.download_track(track)
+            self.downloader.prepare_downloaded_track(track)
+            shutil.copy(os.path.join(self.DATABASE_DIR,
+                        track.id_filename), track.filename)
+            return send_file(f"../{track.filename}", as_attachment=True)
+
+        @self.app.route("/download_playlist", methods=["GET"])
+        def download_playlist():
+            playlist_id = request.args.get("playlist_id")
+            playlist = self.database.get_playlist(playlist_id)
+            for track in playlist.tracks:
+                if not os.path.isfile(os.path.join(self.DATABASE_DIR, track.id_filename)):
+                    self.downloader.download_track(track)
+                self.downloader.prepare_downloaded_track(track)
+            directory = playlist.name
+            while os.path.isdir(directory):
+                directory += "_"
+            os.mkdir(directory)
+            for track in playlist.tracks:
+                shutil.copy(
+                    os.path.join(self.DATABASE_DIR, track.id_filename),
+                    os.path.join(directory, track.filename)
+                )
+            shutil.make_archive(directory, "zip", directory)
+            shutil.rmtree(directory)
+            return send_file(f"../{directory}.zip", as_attachment=True)
 
         @self.app.route("/refresh", methods=["GET"])
         def refresh():

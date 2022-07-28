@@ -37,12 +37,13 @@ class Database:
     ##################### GET Playlist Album Track Artist #####################
     ###########################################################################
 
-    def get_playlist(self, playlist_id: str, conn: Connection = None) -> Playlist:
+    def get_playlist(self, playlist_id: str, direct_download=False, conn: Connection = None) -> Playlist:
         if conn is None:
             conn = Connection()
         if not self.is_existing("Playlist", playlist_id, conn=conn):
             playlist = self.spotify_api.get_playlist(playlist_id)
-            self.save_playlist(playlist, conn=conn)
+            self.save_playlist(
+                playlist, direct_download=direct_download, conn=conn)
             return playlist
 
         sql = f"SELECT name, spotify_url, image_url FROM Playlist " \
@@ -97,12 +98,12 @@ class Database:
             tracks, album_img_url, album_artists
         )
 
-    def get_track(self, track_id: str, conn: Connection = None) -> Track:
+    def get_track(self, track_id: str, direct_download=False, conn: Connection = None) -> Track:
         if conn is None:
             conn = Connection()
         if not self.is_existing("Track", track_id, conn=conn):
             track = self.downloader.spotify_api.get_track(track_id)
-            self.save_track(track, conn=conn)
+            self.save_track(track, direct_download=direct_download, conn=conn)
             return track
 
         # track
@@ -245,8 +246,8 @@ class Database:
     ################################## SAVE ##################################
     ##########################################################################
 
-    def save_playlist(self, playlist: Playlist,
-                      force_insert: bool = False, conn: Connection = None):
+    def save_playlist(self, playlist: Playlist, force_insert: bool = False,
+                      direct_download=False, conn: Connection = None):
         if conn is None:
             conn = Connection()
         if not force_insert:
@@ -262,7 +263,8 @@ class Database:
 
         # save tracks
         for track in playlist.tracks:
-            self.save_track(track, force_insert=force_insert, conn=conn)
+            self.save_track(track, force_insert=force_insert,
+                            direct_download=direct_download, conn=conn)
 
         # link tracks
         for track in playlist.tracks:
@@ -299,7 +301,7 @@ class Database:
         for track in album.tracks:
             self.save_track(track, force_insert=force_insert, conn=conn)
 
-    def save_track(self, track: Track, force_insert: bool = False, conn: Connection = None):
+    def save_track(self, track: Track, force_insert: bool = False, direct_download=False, conn: Connection = None):
         if conn is None:
             conn = Connection()
         if not force_insert:
@@ -307,7 +309,10 @@ class Database:
                     and os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
                 return
         if not os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
-            self.app.downloader.put_queue(track)
+            if direct_download:
+                self.app.downloader.download_track(track)
+            else:
+                self.app.downloader.put_queue(track)
 
         # save track
         track_name = track.name.replace("'", "\\'")
