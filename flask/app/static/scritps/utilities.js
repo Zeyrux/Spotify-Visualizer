@@ -207,7 +207,7 @@ export function create_fps() {
 
 export function create_user_playlists() {
     let div = document.createElement("div");
-    div.id = "playlists"
+    div.id = "playlists";
 
     // create playlists
     user_playlists.forEach(playlist => {
@@ -254,6 +254,29 @@ export function create_user_tracks() {
         div_tracks.id = playlist.id;
         div_tracks.style.display = "none";
 
+        // create playlist details
+        let div_playlist_details = document.createElement("div");
+        div_playlist_details.className = "playlist_details";
+        // image
+        let image = document.createElement("img");
+        image.src = playlist.image_url;
+        image.className = "playlist_details_image";
+        // buttons
+        let div_buttons = document.createElement("div");
+        div_buttons.className = "playlist_details_buttons";
+        // play button
+        let button_play = create_form(undefined, "/play_track", "▶", true, playlist.id, "playlist_id");
+        // add to div
+        div_playlist_details.appendChild(image);
+        div_playlist_details.appendChild(button_play);
+        // p
+        let p = document.createElement("p");
+        p.innerHTML = playlist.name;
+        p.className = "playlist_details_p";
+        // add to div
+        div_tracks.appendChild(div_playlist_details);
+        div_tracks.appendChild(p);
+
         // add tracks
         playlist.tracks.forEach(track => {
             // create div track
@@ -266,7 +289,7 @@ export function create_user_tracks() {
             // create p
             let p = document.createElement("p");
             p.innerHTML = track.name;
-            p.classList.add("track_part");
+            p.classList.add("track_p", "track_part");
 
             // add show track event
             div_track.addEventListener("click", function (e) {

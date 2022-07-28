@@ -112,10 +112,13 @@ class App:
 
         @self.app.route("/play_track", methods=["GET"])
         def play_track():
-            track_id = request.args["track_id"]
+            if "track_id" in request.args.keys():
+                track_id = request.args["track_id"]
+                track = self.database.get_track(track_id)
+            else:
+                track = None
             playlist_id = request.args["playlist_id"]
             playlist = self.database.get_playlist(playlist_id)
-            track = self.database.get_track(track_id)
             self.controller.play_playlist(playlist, track)
             return redirect(url_for("visualizer", **request.args))
 
