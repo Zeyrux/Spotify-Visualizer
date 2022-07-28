@@ -17,11 +17,11 @@ let delta;
 
 
 function init() {
-    let context = new AudioContext();
+	let context = new AudioContext();
 
 	if (context.state == "suspended") {
 		// audio context can not start
-		window.addEventListener("click", enable_anaylser);
+		window.addEventListener("click", enable_anaylser, { once: true });
 	} else {
 		// audio context started
 		enable_anaylser();
@@ -30,8 +30,6 @@ function init() {
 
 
 function enable_anaylser() {
-    window.removeEventListener("click", enable_anaylser);
-
 	audio.play();
 	let context = new AudioContext();
 	analyser = context.createAnalyser();
@@ -40,8 +38,8 @@ function enable_anaylser() {
 	analyser.connect(context.destination);
 	ctx = canvas.getContext('2d');
 
-    setGradients();
-    frameLopper();
+	setGradients();
+	frameLopper();
 }
 
 
@@ -55,51 +53,51 @@ function average(ar) {
 
 
 function frameLopper() {
-    requestAnimationFrame(frameLopper);
+	requestAnimationFrame(frameLopper);
 
-    now = Date.now();
-    delta = now - then;
+	now = Date.now();
+	delta = now - then;
 	interval = 1000 / controller["fps"]
 
-    if (delta > interval) {
-        animate()
-        then = now - (delta % interval)
-    }
+	if (delta > interval) {
+		animate()
+		then = now - (delta % interval)
+	}
 }
 
 
-function animate(){
+function animate() {
 	// skip every second frame
-    frame_cnt += 1;
+	frame_cnt += 1;
 	//fbc_array max: 255
 	let fbc_array = new Uint8Array(analyser.frequencyBinCount);
 	analyser.getByteFrequencyData(fbc_array);
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.fillStyle = gradientBars;
-    
-    // draw bars
-    for (let i = 0; i < bars; i+=1) {
+
+	// draw bars
+	for (let i = 0; i < bars; i += 1) {
 		let bar_x = i * 2;
 		let bar_height = -(fbc_array[i] * canvas.height / 275);
-        ctx.fillRect(canvas.width / 2 + bar_x, canvas.height, bar_width, bar_height);
-        ctx.fillRect(canvas.width / 2 + bar_x * -1, canvas.height, bar_width, bar_height);
+		ctx.fillRect(canvas.width / 2 + bar_x, canvas.height, bar_width, bar_height);
+		ctx.fillRect(canvas.width / 2 + bar_x * -1, canvas.height, bar_width, bar_height);
 	}
 
-    // circle all
+	// circle all
 	ctx.fillStyle = gradientCircleAll;
 	ctx.beginPath();
 	let radius = Math.round(average(fbc_array.slice(0, bars)) * canvas.height / 275);
 	ctx.arc(canvas.width / 2, 0, radius, 2 * Math.PI, false);
 	ctx.fill();
 
-    // circle bass
+	// circle bass
 	ctx.fillStyle = gradientCircleBass;
 	ctx.beginPath();
 	radius = Math.round(average(fbc_array.slice(0, 5)) * canvas.height / 275);
 	ctx.arc(canvas.width / 2, 0, radius, 2 * Math.PI, false);
 	ctx.fill();
 
-    // text
+	// text
 	let font_size = radius / 4;
 	if (font_size < 25)
 		font_size = 25;
@@ -110,8 +108,8 @@ function animate(){
 
 
 window.setInterval(function (e) {
-    console.log(frame_cnt)
-    frame_cnt = 0
+	console.log(frame_cnt)
+	frame_cnt = 0
 }, 1000)
 
 

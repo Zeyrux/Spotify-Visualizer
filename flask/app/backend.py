@@ -119,6 +119,11 @@ class App:
             self.controller.play_playlist(playlist, track)
             return redirect(url_for("visualizer", **request.args))
 
+        @self.app.route("/play_random", methods=["GET"])
+        def play_random():
+            self.controller.play_random_track()
+            return redirect(url_for("visualizer"), **request.args)
+
         @self.app.route("/visualizer", methods=["GET"])
         def visualizer():
             if not session.get("token_info", None):

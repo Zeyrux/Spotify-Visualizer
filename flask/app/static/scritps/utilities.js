@@ -214,32 +214,32 @@ export function create_user_playlists() {
         // create playlist div
         let playlist_div = document.createElement("div");
         playlist_div.className = "playlist";
-
         // add image
         let playlist_image = document.createElement("img");
         playlist_image.src = playlist.image_url;
         playlist_image.className = "playlist_image";
-
         // add text
         let p = document.createElement("p");
         p.innerHTML = playlist.name;
+
         // add event
         playlist_div.addEventListener("click", function (e) {
             // display playlist
             document.getElementById(playlist.id).style.display = "inline";
-            window.addEventListener("click", function (e) {
-                if (e.target.innerHTML != playlist.name) {
+            window.addEventListener("click", function undisplay_playlist(e) {
+                if (e.target.innerHTML != playlist.name && !e.target.classList.contains("track_part")) {
                     // undisplay playlist
                     document.getElementById(playlist.id).style.display = "none";
-                }
+                    window.removeEventListener("click", undisplay_playlist);
+                };
             });
         });
+
         playlist_div.appendChild(playlist_image);
         playlist_div.appendChild(p);
         div.appendChild(playlist_div);
     });
-
-    return div
+    return div;
 }
 
 
@@ -253,6 +253,7 @@ export function create_user_tracks() {
         let div_tracks = document.createElement("div");
         div_tracks.id = playlist.id;
         div_tracks.style.display = "none";
+
         // add tracks
         playlist.tracks.forEach(track => {
             // create div track
@@ -261,11 +262,27 @@ export function create_user_tracks() {
             // create image
             let image = document.createElement("img");
             image.src = track.image_url;
-            image.className = "track_image";
+            image.classList.add("track_image", "track_part");
             // create p
             let p = document.createElement("p");
             p.innerHTML = track.name;
+            p.classList.add("track_part");
+
+            // add show track event
             div_track.addEventListener("click", function (e) {
+                // display track
+                document.getElementById(track.id).style.display = "inline";
+                window.addEventListener("click", function undisplay_track(e) {
+                    if (!(e.target.classList.contains("track_part") && e.target.innerHTML == track.name)) {
+                        // undisplay track
+                        document.getElementById(track.id).style.display = "none";
+                        window.removeEventListener("click", undisplay_track);
+                    }
+                });
+            });
+
+            // add submit event
+            div_track.addEventListener("dblclick", function (e) {
                 // create form and add second hidden input
                 let form = create_form("play_track_form", "/play_track", "Submit", true, track.id, "track_id");
                 let hidden = document.createElement("input");
@@ -278,14 +295,47 @@ export function create_user_tracks() {
                 form.click();
                 form.submit();
             })
+
             div_track.appendChild(image);
             div_track.appendChild(p);
             div_tracks.appendChild(div_track);
         });
         div.appendChild(div_tracks);
     });
-
     return div;
+}
+
+
+export function create_user_track_details() {
+    let div = document.createElement("div");
+    div.id = "tracks_details";
+
+    // create track details
+    user_playlists.forEach(playlist => {
+        playlist.tracks.forEach(track => {
+            // create track div
+            let div_track = document.createElement("div");
+            div_track.id = track.id;
+            div_track.style.display = "none";
+            div_track.className = "track_details";
+
+            // create image
+            let image = document.createElement("img");
+            image.src = track.image_url;
+            image.classList.add("track_details_image", "track_part_details");
+
+            // create p
+            let p = document.createElement("p");
+            p.innerHTML = track.name;
+            p.classList.add("track_part_details");
+
+            // add everything to div
+            div_track.appendChild(image);
+            div_track.appendChild(p);
+            div.appendChild(div_track);
+        });
+    });
+    return div
 }
 
 export function create_reload() {
