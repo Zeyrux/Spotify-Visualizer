@@ -278,9 +278,11 @@ export function create_user_playlists() {
         // play playlist
         playlist_div.addEventListener("dblclick", function (e) {
             let form = create_form(undefined, "play_track", undefined, undefined, true, playlist.id, "playlist_id");
+            form.style.display = "none";
+            playlist_div.appendChild(form);
             form.click();
             form.submit();
-        }, { once: true });
+        });
 
         playlist_div.appendChild(playlist_image);
         playlist_div.appendChild(p);
