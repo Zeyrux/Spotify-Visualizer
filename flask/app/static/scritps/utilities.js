@@ -1,6 +1,15 @@
 import { controller, user_playlists } from "./init.js";
 
-export function create_form(form_id, action, submit_value, create_hidden, hidden_value, hidden_name) {
+
+export function create_controller(form) {
+    let controller_input = document.createElement("input");
+    controller_input.type = "hidden";
+    form.addEventListener("click", (e) => controller_input.value = JSON.stringify(controller));
+    controller_input.setAttribute("name", "controller");
+    return controller_input;
+}
+
+export function create_form(form_id, action, submit_value, class_name, create_hidden, hidden_value, hidden_name) {
     // create form
     let form = document.createElement("form");
     if (form_id != undefined) {
@@ -12,6 +21,9 @@ export function create_form(form_id, action, submit_value, create_hidden, hidden
     // create submit
     let submit = document.createElement("input");
     submit.type = "submit";
+    if (class_name != undefined) {
+        submit.className = class_name;
+    }
     submit.value = submit_value;
 
     // create hidden input
@@ -23,16 +35,44 @@ export function create_form(form_id, action, submit_value, create_hidden, hidden
         hidden_input.setAttribute("name", hidden_name);
     }
 
-    // create controller hidden
-    let controller_input = document.createElement("input");
-    controller_input.type = "hidden";
-    form.addEventListener("click", (e) => controller_input.value = JSON.stringify(controller));
-    controller_input.setAttribute("name", "controller");
-
     form.appendChild(submit);
-    form.appendChild(controller_input);
+    form.appendChild(create_controller(form));
     if (create_hidden)
         form.appendChild(hidden_input);
+    return form;
+}
+
+
+export function create_form_two_hidden(action, submit_value, class_name, hidden_value_one, hidden_name_one, hidden_value_two, hidden_name_two) {
+    // create form
+    let form = document.createElement("form");
+    form.method = "get";
+    form.action = action;
+
+    // create submit
+    let submit = document.createElement("input");
+    submit.type = "submit";
+    submit.value = submit_value;
+    if (class_name != undefined) {
+        submit.className = class_name;
+    }
+
+    // create hidden input
+    let hidden_input_one = document.createElement("input");
+    hidden_input_one.type = "hidden";
+    hidden_input_one.value = hidden_value_one;
+    hidden_input_one.setAttribute("name", hidden_name_one);
+
+    let hidden_input_two = document.createElement("input");
+    hidden_input_two.type = "hidden";
+    hidden_input_two.value = hidden_value_two;
+    hidden_input_two.setAttribute("name", hidden_name_two);
+
+    // add to form
+    form.appendChild(submit);
+    form.appendChild(hidden_input_one);
+    form.appendChild(hidden_input_two);
+    form.appendChild(create_controller(form));
     return form;
 }
 
@@ -222,7 +262,7 @@ export function create_user_playlists() {
         let p = document.createElement("p");
         p.innerHTML = playlist.name;
 
-        // add event
+        // add event show tracks
         playlist_div.addEventListener("click", function (e) {
             // display playlist
             document.getElementById(playlist.id).style.display = "inline";
@@ -234,6 +274,13 @@ export function create_user_playlists() {
                 };
             });
         });
+
+        // play playlist
+        playlist_div.addEventListener("dblclick", function (e) {
+            let form = create_form(undefined, "play_track", undefined, undefined, true, playlist.id, "playlist_id");
+            form.click();
+            form.submit();
+        }, { once: true });
 
         playlist_div.appendChild(playlist_image);
         playlist_div.appendChild(p);
@@ -265,9 +312,9 @@ export function create_user_tracks() {
         let div_buttons = document.createElement("div");
         div_buttons.className = "playlist_details_buttons";
         // play button
-        let button_play = create_form(undefined, "/play_track", "▶", true, playlist.id, "playlist_id");
+        let button_play = create_form(undefined, "/play_track", "▶", "button_details", true, playlist.id, "playlist_id");
         // download button
-        let button_download = create_form(undefined, "/download_playlist", "💾", true, playlist.id, "playlist_id");
+        let button_download = create_form(undefined, "/download_playlist", "⭳", "button_details", true, playlist.id, "playlist_id");
         // add to div
         div_buttons.appendChild(button_play);
         div_buttons.appendChild(button_download);
@@ -311,12 +358,7 @@ export function create_user_tracks() {
             // add submit event
             div_track.addEventListener("dblclick", function (e) {
                 // create form and add second hidden input
-                let form = create_form("play_track_form", "/play_track", "Submit", true, track.id, "track_id");
-                let hidden = document.createElement("input");
-                hidden.type = "hidden";
-                hidden.name = "playlist_id";
-                hidden.value = playlist.id;
-                form.appendChild(hidden);
+                let form = create_form_two_hidden("/play_track", "Submit", undefined, track.id, "track_id", playlist.id, "playlist_id");
                 form.style.visibility = "hidden";
                 div_tracks.appendChild(form);
                 form.click();
@@ -345,24 +387,28 @@ export function create_user_track_details() {
             div_track.id = track.id;
             div_track.style.display = "none";
             div_track.className = "track_details";
-
             // create image
             let image = document.createElement("img");
             image.src = track.image_url;
             image.classList.add("track_details_image", "track_part_details");
-
             // create p
             let p = document.createElement("p");
             p.innerHTML = track.name;
             p.classList.add("track_part_details");
 
+            // div buttons
+            let div_buttons = document.createElement("div");
+            div_buttons.className = "track_details_buttons";
+            // create play button
+            let button_play = create_form_two_hidden("/play_track", "▶", "button_details", track.id, "track_id", playlist.id, "playlist_id");
             // create download button
-            let button_download = create_form(undefined, "/download_track", "⭳", true, track.id, "track_id");
-
+            let button_download = create_form(undefined, "/download_track", "⭳", "button_details", true, track.id, "track_id");
             // add everything to div
+            div_buttons.appendChild(button_play);
+            div_buttons.appendChild(button_download);
             div_track.appendChild(image);
+            div_track.appendChild(div_buttons);
             div_track.appendChild(p);
-            div_track.appendChild(button_download);
             div.appendChild(div_track);
         });
     });

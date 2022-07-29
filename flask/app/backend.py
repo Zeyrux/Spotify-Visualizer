@@ -77,7 +77,8 @@ class App:
                 os.remove(filename)
             # remove tracking files
             if filename.endswith(".spotdlTrackingFile"):
-                os.remove(filename)
+                if os.path.isfile(filename):
+                    os.remove(filename)
 
         # remove .cache and .spotdl-cache
         if os.path.isfile(".cache"):

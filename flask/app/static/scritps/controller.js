@@ -51,8 +51,8 @@ function init() {
 
 	// add buttons
 	controlls.appendChild(create_slider_duration(track.duration_ms / 1000));
-	controlls.appendChild(create_form("skip_form", "/visualizer", "Skip", false, undefined, undefined));
-	controlls.appendChild(create_form("back_form", "/visualizer", "Back", true, "back", "back"));
+	controlls.appendChild(create_form("skip_form", "/visualizer", "Skip", undefined, false, undefined, undefined));
+	controlls.appendChild(create_form("back_form", "/visualizer", "Back", undefined, true, "back", "back"));
 	controlls.appendChild(create_button("Pause", "hover_button", "play_pause"));
 	controlls.appendChild(create_checkable_button("Loop", "loop_active", false));
 	controlls.appendChild(create_fps());

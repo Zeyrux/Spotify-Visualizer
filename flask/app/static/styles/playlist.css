@@ -50,7 +50,7 @@
     font-size: 2.5vh;
     white-space: nowrap;
     overflow-x: hidden;
-    width: 100%;
+    width: 99%;
 }
 
 #tracks_details p {
@@ -98,6 +98,13 @@
     margin: 0;
 }
 
+.playlist_details_image {
+    width: 15vh;
+    height: 15vh;
+    border-radius: 2vh;
+    margin: 0;
+}
+
 .playlist,
 .track {
     display: flex;
@@ -116,4 +123,20 @@
     opacity: 1;
     cursor: pointer;
     background: rgba(87, 87, 87, 0.5);
+}
+
+/* details button */
+.track_details_buttons,
+.playlist_details_buttons {
+    display: flex;
+    width: 90%;
+}
+
+.button_details {
+    background: rgb(90, 80, 202);
+    border-radius: 1.5vh;
+    height: 3vh;
+    width: 3vh;
+    margin-right: 1vh;
+    font-size: 2vh;
 }

@@ -26,6 +26,7 @@ class Downloader:
         self.download_thread = Thread(target=self._worker_save_track,
                                       daemon=True)
         self.download_thread.start()
+        self.get_queue()
         self.running = True
 
     def put_queue(self, track: "Track"):
@@ -58,7 +59,7 @@ class Downloader:
         while not self.queue.empty():
             tracks.append(self.queue.get().to_dict(self.app.spotify_api))
             self.queue.task_done()
-        if len(tracks) == 0:
+        if len(tracks) == 0 and len(self.queue_items_ids) == 0:
             return
         with open(self.app.PATH_QUEUE, "w") as f:
             json.dump(tracks, f, indent=4)

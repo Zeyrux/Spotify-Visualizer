@@ -1,6 +1,7 @@
 import random
 import time
 import os
+from itertools import count
 
 from app.SpotifyAPI import Playlist, Album, Track
 
@@ -100,11 +101,14 @@ class Controller:
             if not os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
                 self.app.downloader.download_track(track)
             return track
-        while not os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
+        for counter_new_tries in count():
+            if counter_new_tries == 50:
+                self.app.downloader.download_track(track)
+            if os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
+                return track
             self.app.downloader.put_queue(track)
-            time.sleep(0.1)
+            time.sleep(0.05)
             track = function()
-        return track
 
     def get_next_track(self):
         return self.check_track(self.player.get_next_track)

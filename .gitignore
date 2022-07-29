@@ -1,11 +1,22 @@
+# folders
 Icon
-Interpreter
+venv
 .idea
 keys
+__pycache__
+
+# scripts
 test.py
+
+# single files
 .cache
 .spotdl-cache
-__pycache__
 queue.json
 user_playlists.json
 ffmpeg.exe
+
+# downloaded files
+*mp3
+*webm
+*jpg
+*spotdlTrackingFile
