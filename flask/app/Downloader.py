@@ -10,6 +10,7 @@ from app.SpotifyAPI import Track
 
 import eyed3
 from eyed3.id3.frames import ImageFrame
+import lyricsgenius
 
 
 class Downloader:
@@ -106,12 +107,30 @@ class Downloader:
         except Exception:
             pass
 
-        file.tag.title = track.name
-        file.tag.artist = "; ".join([artist.name for artist in track.artists])
-        file.tag.album = track.album(self.app.database).name
-        file.tag.album_artist = "; ".join(
-            [artist.name for artist in track.album(self.app.database).artists]
-        )
+        if file.tag.title is not None:
+            file.tag.title = track.name
+        if file.tag.artist is not None:
+            file.tag.artist = "; ".join(
+                [artist.name for artist in track.artists])
+        if file.tag.album is not None:
+            file.tag.album = track.album(self.app.database).name
+        if file.tag.album_artist is not None:
+            file.tag.album_artist = "; ".join(
+                [artist.name for artist in track.album(
+                    self.app.database).artists]
+            )
+
+        # get lyrics
+        try:
+            lg = lyricsgenius.Genius(self.app.LYRICS_GENIUS_KEY)
+            if len(track.artists) > 0:
+                track_lg = lg.search_song(
+                    title=track.name, artist=track.artists[0].name)
+            else:
+                track_lg = lg.search_song(title=track.name)
+            file.tag.lyrics.set(track_lg.lyrics)
+        except Exception:
+            pass
         file.tag.save()
 
     def download_track(self, track: "Track") -> "Track":
@@ -159,8 +178,10 @@ class Downloader:
         final = os.path.join(self.app.DATABASE_DIR, track.id_filename)
         file = eyed3.load(os.path.join(
             self.app.DATABASE_DIR, track.id_filename))
-        if file.tag is None:
-            shutil.copy(final, copy)
-            self._add_song_data(track)
-            os.remove(final)
-            shutil.move(copy, final)
+        if file.tag is not None:
+            if file.tag.lyrics.get("") is not None:
+                return
+        shutil.copy(final, copy)
+        self._add_song_data(track)
+        os.remove(final)
+        shutil.move(copy, final)

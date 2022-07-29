@@ -43,6 +43,8 @@ class App:
             self.KEYS_DIR, "spotify_clt_id.txt")
         self.SPOTIFY_CLT_SECRET_PATH = os.path.join(
             self.KEYS_DIR, "spotify_clt_secret.txt")
+        self.LYRICS_GENIUS_KEY = open(os.path.join(
+            self.KEYS_DIR, "lyrics_genius.txt"), "r").read()
 
         self.controller = Controller(self)
         self.downloader = Downloader(self)
