@@ -245,50 +245,68 @@ export function create_fps() {
 }
 
 
-export function create_user_playlists() {
+export function create_list_of_tracks(id, tracks, tracks_id_prefix, track_class, img_class, event_func_single, event_func_multi) {
     let div = document.createElement("div");
-    div.id = "playlists";
+    if (id != undefined)
+        div.id = id;
 
     // create playlists
-    user_playlists.forEach(playlist => {
+    tracks.forEach(track => {
         // create playlist div
-        let playlist_div = document.createElement("div");
-        playlist_div.className = "playlist";
+        let track_div = document.createElement("div");
+        track_div.className = track_class;
+        track_div.id = tracks_id_prefix + track.id;
         // add image
-        let playlist_image = document.createElement("img");
-        playlist_image.src = playlist.image_url;
-        playlist_image.className = "playlist_image";
+        let track_image = document.createElement("img");
+        track_image.src = track.image_url;
+        track_image.className = img_class;
         // add text
         let p = document.createElement("p");
-        p.innerHTML = playlist.name;
+        p.innerHTML = track.name;
 
-        // add event show tracks
-        playlist_div.addEventListener("click", function (e) {
-            // display playlist
-            document.getElementById(playlist.id).style.display = "inline";
-            window.addEventListener("click", function undisplay_playlist(e) {
-                if (e.target.innerHTML != playlist.name && !e.target.classList.contains("track_part")) {
-                    // undisplay playlist
-                    document.getElementById(playlist.id).style.display = "none";
-                    window.removeEventListener("click", undisplay_playlist);
-                };
-            });
-        });
+        // add event single
+        track_div.addEventListener("click", event_func_single);
+        // add event multi
+        if (event_func_multi != undefined)
+            track_div.addEventListener("dblclick", event_func_multi);
 
-        // play playlist
-        playlist_div.addEventListener("dblclick", function (e) {
-            let form = create_form(undefined, "play_track", undefined, undefined, true, playlist.id, "playlist_id");
-            form.style.display = "none";
-            playlist_div.appendChild(form);
-            form.click();
-            form.submit();
-        });
-
-        playlist_div.appendChild(playlist_image);
-        playlist_div.appendChild(p);
-        div.appendChild(playlist_div);
+        track_div.appendChild(track_image);
+        track_div.appendChild(p);
+        div.appendChild(track_div);
     });
     return div;
+}
+
+
+export function create_user_playlists() {
+    // event show tracks
+    let single = function (e) {
+        let playlist = e.path[1];
+        let id = playlist.id.replace("user_playlist_", "");
+        console.log(e)
+        console.log(id)
+        // display playlist
+        document.getElementById(id).style.display = "inline";
+        window.addEventListener("click", function undisplay_playlist(e) {
+            if (e.target.innerHTML != playlist.children[1].innerHTML && !e.target.classList.contains("track_part")) {
+                // undisplay playlist
+                document.getElementById(id).style.display = "none";
+                window.removeEventListener("click", undisplay_playlist);
+            };
+        });
+    };
+
+    // play playlist
+    let multi = function (e) {
+        let playlist = e.path[1];
+        let id = playlist.id.replace("user_playlist_", "");
+        let form = create_form(undefined, "play_track", undefined, undefined, true, id, "playlist_id");
+        form.style.display = "none";
+        playlist.appendChild(form);
+        form.click();
+        form.submit();
+    };
+    return create_list_of_tracks("playlists", user_playlists, "user_playlist_", "playlist", "playlist_image", single, multi);
 }
 
 
@@ -330,47 +348,34 @@ export function create_user_tracks() {
         div_tracks.appendChild(div_playlist_details);
         div_tracks.appendChild(p);
 
-        // add tracks
-        playlist.tracks.forEach(track => {
-            // create div track
-            let div_track = document.createElement("div");
-            div_track.className = "track";
-            // create image
-            let image = document.createElement("img");
-            image.src = track.image_url;
-            image.classList.add("track_image", "track_part");
-            // create p
-            let p = document.createElement("p");
-            p.innerHTML = track.name;
-            p.classList.add("track_p", "track_part");
-
-            // add show track event
-            div_track.addEventListener("click", function (e) {
-                // display track
-                document.getElementById(track.id).style.display = "inline";
-                window.addEventListener("click", function undisplay_track(e) {
-                    if (!(e.target.classList.contains("track_part") && e.target.innerHTML == track.name)) {
-                        // undisplay track
-                        document.getElementById(track.id).style.display = "none";
-                        window.removeEventListener("click", undisplay_track);
-                    }
-                });
+        // show track event
+        let single_func = function (e) {
+            let track = e.path[1];
+            let id = track.id.replace("track_", "");
+            // display track
+            document.getElementById(id).style.display = "inline";
+            window.addEventListener("click", function undisplay_track(e) {
+                if (!(e.target.classList.contains("track_part") && e.target.innerHTML == track.children[1].innerHTML)) {
+                    // undisplay track
+                    document.getElementById(id).style.display = "none";
+                    window.removeEventListener("click", undisplay_track);
+                }
             });
+        };
 
-            // add submit event
-            div_track.addEventListener("dblclick", function (e) {
-                // create form and add second hidden input
-                let form = create_form_two_hidden("/play_track", "Submit", undefined, track.id, "track_id", playlist.id, "playlist_id");
-                form.style.visibility = "hidden";
-                div_tracks.appendChild(form);
-                form.click();
-                form.submit();
-            })
+        // submit event
+        let multi_func = function (e) {
+            // create form and submit
+            let track = e.path[1];
+            let id = track.id.replace("track_", "");
+            let form = create_form_two_hidden("/play_track", "Submit", undefined, id, "track_id", playlist.id, "playlist_id");
+            form.style.visibility = "hidden";
+            div_tracks.appendChild(form);
+            form.click();
+            form.submit();
+        };
 
-            div_track.appendChild(image);
-            div_track.appendChild(p);
-            div_tracks.appendChild(div_track);
-        });
+        div_tracks.append(create_list_of_tracks(undefined, playlist.tracks, "track_", "track", "track_image", single_func, multi_func));
         div.appendChild(div_tracks);
     });
     return div;

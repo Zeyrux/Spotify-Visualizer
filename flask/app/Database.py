@@ -41,7 +41,7 @@ class Database:
         if conn is None:
             conn = Connection()
         if not self.is_existing("Playlist", playlist_id, conn=conn):
-            playlist = self.spotify_api.get_playlist(playlist_id)
+            playlist = self.app.spotify_api.get_playlist(playlist_id)
             self.save_playlist(
                 playlist, direct_download=direct_download, conn=conn)
             return playlist
@@ -352,3 +352,7 @@ class Database:
             f"VALUES ('{artist.id}', '{artist_name}', " \
             f"'{artist.spotify_url}')"
         execute(conn, sql)
+
+    ##########################################################################
+    ################################# SEARCH #################################
+    ##########################################################################

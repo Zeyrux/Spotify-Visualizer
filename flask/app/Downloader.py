@@ -128,7 +128,8 @@ class Downloader:
                     title=track.name, artist=track.artists[0].name)
             else:
                 track_lg = lg.search_song(title=track.name)
-            file.tag.lyrics.set(track_lg.lyrics)
+            if track.artists[0].name in track_lg.artist:
+                file.tag.lyrics.set(track_lg.lyrics)
         except Exception:
             pass
         file.tag.save()

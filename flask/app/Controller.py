@@ -1,21 +1,27 @@
 import random
 import time
 import os
+import json
 from itertools import count
 
 from app.SpotifyAPI import Playlist, Album, Track
 
 
 class Tracks:
+
+    last_call_next: bool = None
+
     def __init__(self, tracks=None):
         self.tracks = [] if tracks is None else tracks
         self.cur_track = -1
 
     def next(self) -> Track:
+        self.last_call_next = True
         self.cur_track += 1
         return self.tracks[self.cur_track]
 
     def previous(self) -> Track:
+        self.last_call_next = False
         self.cur_track -= 1
         return self.tracks[self.cur_track]
 
@@ -37,6 +43,15 @@ class Tracks:
 
     def add_future(self, track: Track):
         self.tracks.append(track)
+
+    def del_current(self):
+        del self.tracks[self.cur_track]
+        if self.last_call_next:
+            self.cur_track -= 1
+
+    def __iter__(self):
+        for track in self.tracks:
+            yield track
 
 
 class RandomPlayer:
@@ -106,6 +121,7 @@ class Controller:
                 self.app.downloader.download_track(track)
             if os.path.isfile(os.path.join(self.app.DATABASE_DIR, track.id_filename)):
                 return track
+            self.player.tracks.del_current()
             self.app.downloader.put_queue(track)
             time.sleep(0.05)
             track = function()
@@ -128,3 +144,14 @@ class Controller:
 
     def play_random_track(self):
         self.player = RandomPlayer(self.app)
+
+    def to_str(self) -> str:
+        tracks = []
+        for track in self.player.tracks:
+            tracks.append(track.to_dict(self.app.spotify_api))
+            print(track.to_dict(self.app.spotify_api))
+
+        return json.dumps({
+            "tracks": tracks,
+            "cur_track": self.player.tracks.cur_track,
+        })

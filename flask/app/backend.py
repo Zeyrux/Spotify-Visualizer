@@ -184,8 +184,10 @@ class App:
             file_path = os.path.join(
                 *self.DATABASE_DIR.parts[1:], track.id_filename)
             return render_template(
-                "visualizer.html", file_path=file_path,
-                song_name=track.name, controller=controller_web,
-                user_playlists=user_playlists, track=json.dumps(
-                    track.to_dict(self.spotify_api))
+                "visualizer.html",
+                file_path=file_path,
+                song_name=track.name,
+                controller=controller_web,
+                user_playlists=user_playlists,
+                tracks=self.controller.to_str()
             )
