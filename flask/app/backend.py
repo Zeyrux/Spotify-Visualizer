@@ -151,6 +151,12 @@ class App:
             self.spotify_api.save_user_playlists_from_api()
             return CLOSE_WINDOW
 
+        @self.app.route("/play_track_from_history", methods=["GET"])
+        def play_track_from_history():
+            track_index = request.args.get("track_index")
+            self.controller.play_track_from_history(int(track_index))
+            return redirect(url_for("visualizer", **request.args))
+
         @self.app.route("/play_track", methods=["GET"])
         def play_track():
             if "track_id" in request.args.keys():

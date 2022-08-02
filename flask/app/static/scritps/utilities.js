@@ -1,4 +1,4 @@
-import { controller, user_playlists } from "./init.js";
+import { controller, user_playlists, tracks } from "./init.js";
 
 
 export function create_controller(form) {
@@ -245,24 +245,31 @@ export function create_fps() {
 }
 
 
-export function create_list_of_tracks(id, tracks, tracks_id_prefix, track_class, img_class, event_func_single, event_func_multi) {
+export function create_list_of_tracks(id, div_class, tracks, tracks_id_prefix, track_class, img_class, event_func_single, event_func_multi, are_track_parts) {
     let div = document.createElement("div");
     if (id != undefined)
         div.id = id;
+    if (div_class != undefined)
+        div.className = div_class;
 
     // create playlists
     tracks.forEach(track => {
         // create playlist div
         let track_div = document.createElement("div");
         track_div.className = track_class;
-        track_div.id = tracks_id_prefix + track.id;
+        if (tracks_id_prefix != undefined)
+            track_div.id = tracks_id_prefix + track.id;
         // add image
         let track_image = document.createElement("img");
         track_image.src = track.image_url;
         track_image.className = img_class;
+        if (are_track_parts)
+            track_image.classList.add("track_part");
         // add text
         let p = document.createElement("p");
         p.innerHTML = track.name;
+        if (are_track_parts)
+            p.classList.add("track_part");
 
         // add event single
         track_div.addEventListener("click", event_func_single);
@@ -283,8 +290,6 @@ export function create_user_playlists() {
     let single = function (e) {
         let playlist = e.path[1];
         let id = playlist.id.replace("user_playlist_", "");
-        console.log(e)
-        console.log(id)
         // display playlist
         document.getElementById(id).style.display = "inline";
         window.addEventListener("click", function undisplay_playlist(e) {
@@ -306,13 +311,13 @@ export function create_user_playlists() {
         form.click();
         form.submit();
     };
-    return create_list_of_tracks("playlists", user_playlists, "user_playlist_", "playlist", "playlist_image", single, multi);
+    return create_list_of_tracks("playlists", undefined, user_playlists, "user_playlist_", "playlist", "playlist_image", single, multi, false);
 }
 
 
 export function create_user_tracks() {
     let div = document.createElement("div");
-    div.id = "tracks";
+    div.className = "tracks";
 
     // create tracks
     user_playlists.forEach(playlist => {
@@ -375,7 +380,7 @@ export function create_user_tracks() {
             form.submit();
         };
 
-        div_tracks.append(create_list_of_tracks(undefined, playlist.tracks, "track_", "track", "track_image", single_func, multi_func));
+        div_tracks.append(create_list_of_tracks(undefined, undefined, playlist.tracks, "track_", "track", "track_image", single_func, multi_func, true));
         div.appendChild(div_tracks);
     });
     return div;
@@ -424,4 +429,23 @@ export function create_user_track_details() {
 
 export function create_reload() {
     return create_form_without_hidden("/refresh", true, "🗘");
+}
+
+
+export function create_play_history() {
+    let func = function (e) {
+        let track_index = e.path[1].id;
+        let form = create_form(undefined, "/play_track_from_history", undefined, undefined, true, track_index, "track_index");
+        form.style.display = "none";
+        e.path[1].appendChild(form);
+        form.click();
+        form.submit();
+    }
+
+    let div = create_list_of_tracks(undefined, "tracks", tracks["tracks"], undefined, "track", "track_image", func, func, false);
+    for (let i = 0; i < div.childNodes.length; i++) {
+        const track = div.childNodes[i];
+        track.id = i;
+    }
+    return div;
 }

@@ -7,12 +7,14 @@
     <link rel="stylesheet" href="{{url_for('static', filename='styles/style.css')}}">
     <link rel="stylesheet" href="{{url_for('static', filename='styles/playlist.css')}}">
     <link rel="stylesheet" href="{{url_for('static', filename='styles/controlls.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='styles/play_history.css')}}">
 </head>
 
 <body>
     <canvas id="canvas"></canvas>
     <div id="controlls"></div>
     <div id="user_playlists"></div>
+    <div id="play_history"></div>
     <audio id="audio" src="{{file_path}}" style="position: absolute;"></audio>
     <script src="{{url_for('static', filename='scritps/tracks.js')}}" type="module"></script>
     <script src="{{url_for('static', filename='scritps/init.js')}}" id="init_script" type="module"

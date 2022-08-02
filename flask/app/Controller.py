@@ -145,6 +145,9 @@ class Controller:
     def play_random_track(self):
         self.player = RandomPlayer(self.app)
 
+    def play_track_from_history(self, track_index):
+        self.player.tracks.cur_track = track_index - 1
+
     def to_str(self) -> str:
         tracks = []
         for track in self.player.tracks:

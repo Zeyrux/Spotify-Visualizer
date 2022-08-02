@@ -15,7 +15,7 @@
 }
 
 /* all tracks div */
-#tracks {
+.tracks {
     position: absolute;
     margin-left: 22vw;
 }
@@ -32,7 +32,7 @@
 
 /* each playlist and track */
 #playlists,
-#tracks {
+.tracks {
     height: 100%;
     overflow-y: scroll;
     overflow-x: unset;
@@ -44,7 +44,7 @@
 }
 
 #playlists p,
-#tracks p {
+.tracks p {
     padding: 0.5vh 0 0.5vh 0.25vw;
     margin: 0;
     font-size: 2.5vh;
@@ -64,12 +64,12 @@
 
 /* scrollbar */
 #playlists::-webkit-scrollbar,
-#tracks::-webkit-scrollbar {
+.tracks::-webkit-scrollbar {
     width: 1vw;
 }
 
 #playlists::-webkit-scrollbar-thumb,
-#tracks::-webkit-scrollbar-thumb {
+.tracks::-webkit-scrollbar-thumb {
     background: rgba(128, 128, 128, 0.5);
     border: 0.1vh solid rgba(65, 85, 189, 0.5);
     border-radius: 2vh;
@@ -77,7 +77,7 @@
 }
 
 #playlists::-webkit-scrollbar-thumb:hover,
-#tracks::-webkit-scrollbar-thumb:hover {
+.tracks::-webkit-scrollbar-thumb:hover {
     background: rgba(128, 128, 128, 1);
     border: 0.1vh solid rgba(65, 85, 189, 1);
 }
