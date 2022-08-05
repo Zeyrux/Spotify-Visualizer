@@ -427,8 +427,14 @@ export function create_user_track_details() {
     return div
 }
 
+
 export function create_reload() {
     return create_form_without_hidden("/refresh", true, "🗘");
+}
+
+
+export function create_play_random() {
+    return create_form_without_hidden("/play_random", false, "🔀");
 }
 
 

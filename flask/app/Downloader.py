@@ -104,6 +104,7 @@ class Downloader:
                 open(f"{track.id}.jpg", "rb").read(),
                 "image/jpeg"
             )
+            os.remove(f"{track.id}.jpg")
         except Exception:
             pass
 
