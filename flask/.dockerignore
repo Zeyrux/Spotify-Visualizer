@@ -1,7 +1,6 @@
 **/.idea/
 **/__pychache__
 **/test.py
-**/database
 ffmpeg.exe
 queue.queue
 user_playlists.json
