@@ -29,6 +29,11 @@ function init() {
 }
 
 
+function make_mono() {
+	
+}
+
+
 function enable_anaylser() {
 	audio.play();
 	let context = new AudioContext();

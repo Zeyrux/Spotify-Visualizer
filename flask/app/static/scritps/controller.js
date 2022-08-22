@@ -13,6 +13,7 @@ export var bars;
 
 let controlls = document.getElementById("controlls");
 let user_playlists = document.getElementById("user_playlists");
+let playlist_buttons = document.getElementById("playlist_buttons");
 let play_history = document.getElementById("play_history");
 let audio = document.getElementById("audio");
 let post_init_id
@@ -60,9 +61,11 @@ function init() {
 	controlls.appendChild(create_fps());
 	controlls.appendChild(create_slider_volume(audio.volume));
 
+	// add playlist buttons
+	playlist_buttons.appendChild(create_reload());
+	playlist_buttons.appendChild(create_play_random());
+	
 	// add playlists and tracks
-	user_playlists.appendChild(create_reload());
-	user_playlists.appendChild(create_play_random());
 	user_playlists.appendChild(create_user_playlists());
 	user_playlists.appendChild(create_user_tracks());
 	user_playlists.appendChild(create_user_track_details());

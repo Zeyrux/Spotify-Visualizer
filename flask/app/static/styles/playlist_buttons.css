@@ -1,0 +1,15 @@
+#playlist_buttons {
+    display: flex;
+    justify-content: space-around;
+}
+
+#playlist_buttons form input {
+    background: rgb(90, 80, 202);
+    border-radius: 2vh;
+    height: 3vh;
+    width: 3vh;
+    font-size: 2vh;
+    line-height: 5px;
+    text-align: center;
+    padding: 0;
+}

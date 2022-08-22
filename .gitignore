@@ -4,6 +4,7 @@ venv
 .idea
 keys
 __pycache__
+.vscode
 
 # scripts
 test.py

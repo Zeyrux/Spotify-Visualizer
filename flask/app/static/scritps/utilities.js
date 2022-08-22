@@ -434,7 +434,7 @@ export function create_reload() {
 
 
 export function create_play_random() {
-    return create_form_without_hidden("/play_random", false, "🔀");
+    return create_form_without_hidden("/play_random", false, "⮔");
 }
 
 
