@@ -2,6 +2,7 @@ import os
 import secrets
 import shutil
 import atexit
+from threading import Thread
 from pathlib import Path
 
 from app.Controller import Controller
@@ -137,7 +138,9 @@ class App:
 
         @self.app.route("/refresh", methods=["GET"])
         def refresh():
-            self.spotify_api.save_user_playlists_from_api()
+            def save_user_playlists():
+                self.spotify_api.save_user_playlists_from_api()
+            Thread(target=save_user_playlists).start()
             return CLOSE_WINDOW
 
         @self.app.route("/play_track_from_history", methods=["GET"])

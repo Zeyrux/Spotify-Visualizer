@@ -19,8 +19,8 @@ class Connection:
         config = {
             "user": "root",
             "password": "root",
-            # "host": "database",
-            "host": "localhost",
+            "host": "database",
+            # "host": "localhost",
             "port": "3306",
             "database": "Music"
         }
