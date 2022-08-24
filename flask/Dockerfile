@@ -1,6 +1,4 @@
-FROM python:3.10.4
-
-EXPOSE 5000
+FROM python
 
 WORKDIR /app
 

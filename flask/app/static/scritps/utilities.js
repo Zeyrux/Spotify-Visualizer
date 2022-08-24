@@ -455,3 +455,8 @@ export function create_play_history() {
     }
     return div;
 }
+
+
+export function create_download_database() {
+    return create_form_without_hidden("/download_database", true, "⭳");
+}

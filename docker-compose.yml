@@ -3,28 +3,25 @@ services:
 
   flask:
     build: ./flask
-    container_name: flask
+    container_name: music_flask
     restart: always
-    links:
-      - database
     environment:
       - APP_NAME=MyFlaskAPP
+    expose:
+      - 6000
+    networks:
+      - apps
 
   nginx:
     build: ./nginx
-    container_name: nginx
+    container_name: music_nginx
     restart: always
     ports:
       - "5000:5000"
+    networks:
+      - apps
 
-  database:
-    image: mysql:8.0.29
-    container_name: database
-    ports:
-      - "32000:3306"
-    security_opt:
-      - seccomp:unconfined
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-    volumes:
-      - ./database:/docker-entrypoint-initdb.d/:ro
+networks:
+  apps:
+    external:
+      name: apps

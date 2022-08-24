@@ -2,7 +2,7 @@ import {
 	create_form, create_button, create_checkable_button, create_slider_volume,
 	create_slider_duration, seconds_to_string, create_fps, create_user_playlists,
 	create_user_tracks, create_reload, create_user_track_details, create_play_history,
-	create_play_random
+	create_play_random, create_download_database
 } from "./utilities.js";
 import { controller, track } from "./init.js";
 
@@ -64,6 +64,7 @@ function init() {
 	// add playlist buttons
 	playlist_buttons.appendChild(create_reload());
 	playlist_buttons.appendChild(create_play_random());
+	playlist_buttons.appendChild(create_download_database());
 	
 	// add playlists and tracks
 	user_playlists.appendChild(create_user_playlists());

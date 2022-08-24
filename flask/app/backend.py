@@ -163,6 +163,11 @@ class App:
             self.controller.play_random_track()
             return redirect(url_for("visualizer"), **request.args)
 
+        @self.app.route("/download_database", methods=["GET"])
+        def download_database():
+            shutil.make_archive(self.DATABASE_DIR, "zip", self.DATABASE_DIR)
+            return send_file(f"../{self.DATABASE_DIR}.zip", as_attachment=True)
+
         @self.app.route("/visualizer", methods=["GET"])
         def visualizer():
             if not session.get("token_info", None):
