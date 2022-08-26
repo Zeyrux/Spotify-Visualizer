@@ -15,19 +15,81 @@ function average(array) {
 }
 
 
+class Memory {
+	constructor(capacy) {
+		this.capacy = capacy;
+		this.memory = [];
+		this.push_cnt = 0;
+	}
+
+	push(value) {
+		this.push_cnt += 1;
+		if (this.memory.length < this.capacy) {
+			this.memory.push(value);
+		} else {
+			this.memory[this.push_cnt % this.capacy] = value;
+		}
+	}
+
+	get(index) {
+		let index = (this.push_cnt % this.capacy) + index;
+		if (index >= this.capacy)
+			index -= this.capacy;
+		return this.memory[index];
+
+	}
+}
+
+
 class ParticleSystem {
+	constructor(x, y) {
+		this.particles = [];
+		this.memory = new Memory(128);
+		this.x = x;
+		this.y = y;
+	}
 
-
-	set_image_data() {
+	get_image_data() {
 		let image = document.createElement("img");
 		image.src = track.image_url;
 		image.crossOrigin = "Anonymous";
 		image.addEventListener("load", function () {
 			let ctx = canvas.getContext("2d");
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.drawImage(image, 0, 0);
 			console.log(ctx.getImageData(0, 0, image.width, image.height));
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
-		}, {once: true})
+		}, {once: true});
+	}
+
+	set_particles() {
+		for (let y = 0; y < data.height; y++) {
+			let row = [];
+			for (let x = 0; x < data.width; x++) {
+				row.push({
+					x : x,
+					y : y,
+					color: "rgba("
+						+ data.data[(x * 4 + y * 4 * data.width)] + ", "
+						+ data.data[(x * 4 + y * 4 * data.width) + 1] + ", "
+						+ data.data[(x * 4 + y * 4 * data.width) + 2] + ", "
+						+ data.data[(x * 4 + y * 4 * data.width) + 3] + ")"
+				});
+			}
+			this.particles.push(row);
+		}
+		console.log(this.particles)
+	}
+
+	draw(ctx, bass) {
+		this.memory.push(bass)
+		this.particles.forEach(row => {
+			row.forEach(particle => {
+				ctx.fillStyle = particle.color;
+				x = Math.round()
+				ctx.fillRect(this.x + particle.x, this.y + particle.y, 1, 1);
+			});
+		});
 	}
 }
 
