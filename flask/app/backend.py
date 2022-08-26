@@ -189,7 +189,6 @@ class App:
             return render_template(
                 "visualizer.html",
                 file_path=file_path,
-                song_name=track.name,
                 controller=controller_web,
                 user_playlists=user_playlists,
                 tracks=self.controller.to_str()

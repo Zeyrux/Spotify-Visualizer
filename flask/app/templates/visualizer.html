@@ -20,11 +20,10 @@
     <div id="play_history"></div>
     <audio id="audio" src="{{file_path}}" style="position: absolute;"></audio>
     <script src="{{url_for('static', filename='scritps/tracks.js')}}" type="module"></script>
-    <script src="{{url_for('static', filename='scritps/init.js')}}" id="init_script" type="module"
+    <script src="{{url_for('static', filename='scritps/init.js')}}" id="init_script" type="module" 
         controller="{{controller}}" user_playlists="{{user_playlists}}" track="{{track}}" tracks="{{tracks}}"></script>
     <script src="{{url_for('static', filename='scritps/utilities.js')}}" type="module"></script>
-    <script src="{{url_for('static', filename='scritps/controller.js')}}" id="script" type="module"
-        song_name="{{song_name}}"></script>
+    <script src="{{url_for('static', filename='scritps/controller.js')}}" type="module"></script>
     <script src="{{url_for('static', filename='scritps/visualizer.js')}}" type="module"></script>
 </body>
 
