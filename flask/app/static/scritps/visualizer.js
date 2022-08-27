@@ -16,37 +16,47 @@ function average(array) {
 
 
 class Memory {
-	constructor(capacy) {
-		this.capacy = capacy;
+	constructor(capacity) {
+		this.capacity = capacity;
 		this.memory = [];
-		this.push_cnt = 0;
+		this.cur_pos = 0;
 	}
 
 	push(value) {
-		this.push_cnt += 1;
-		if (this.memory.length < this.capacy) {
+		if (this.cur_pos == this.capacity) {
+			this.cur_pos = 0;
+		}
+		if (this.memory.length < this.capacity) {
 			this.memory.push(value);
 		} else {
-			this.memory[this.push_cnt % this.capacy] = value;
+			this.memory[this.cur_pos] = value;
 		}
+		this.cur_pos += 1;
 	}
 
 	get(index) {
-		let index = (this.push_cnt % this.capacy) + index;
-		if (index >= this.capacy)
-			index -= this.capacy;
+		index = this.cur_pos - index - 1;
+		if (index < 0) {
+			index += this.capacity;
+		}
 		return this.memory[index];
-
 	}
 }
 
 
 class ParticleSystem {
-	constructor(x, y) {
+	constructor(middle_x, middle_y) {
 		this.particles = [];
-		this.memory = new Memory(128);
-		this.x = x;
-		this.y = y;
+		this.particle_size = 3;
+		this.particles_per_row = 75;
+		this.velocity = 3;
+		this.memory = new Memory(Math.ceil(this.particles_per_row * 2 / this.velocity));
+		this.middle = {
+			x: middle_x,
+			y: middle_y
+		}
+		this.max;
+		this.get_image_data()
 	}
 
 	get_image_data() {
@@ -56,40 +66,68 @@ class ParticleSystem {
 		image.addEventListener("load", function () {
 			let ctx = canvas.getContext("2d");
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
-			ctx.drawImage(image, 0, 0);
-			console.log(ctx.getImageData(0, 0, image.width, image.height));
+			ctx.drawImage(image, 0, 0, this.particles_per_row, this.particles_per_row);
+			let data = ctx.getImageData(0, 0, this.particles_per_row, this.particles_per_row);
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
-		}, {once: true});
+			this.set_particles(data)
+		}.bind(this), {once: true});
 	}
 
-	set_particles() {
+	set_particles(data) {
 		for (let y = 0; y < data.height; y++) {
 			let row = [];
 			for (let x = 0; x < data.width; x++) {
+				let alpha = data.data[(x * 4 + y * 4 * data.width) + 3] - 0.5;
+				if (alpha < 0) {
+					alpha = 0;
+				}
 				row.push({
-					x : x,
-					y : y,
+					x : x * this.particle_size,
+					y : y * this.particle_size,
 					color: "rgba("
 						+ data.data[(x * 4 + y * 4 * data.width)] + ", "
 						+ data.data[(x * 4 + y * 4 * data.width) + 1] + ", "
 						+ data.data[(x * 4 + y * 4 * data.width) + 2] + ", "
-						+ data.data[(x * 4 + y * 4 * data.width) + 3] + ")"
+						+ alpha + ")"
 				});
 			}
 			this.particles.push(row);
 		}
-		console.log(this.particles)
+		this.max = {
+			x: this.particles.length,
+			y: this.particles[0].length
+		}
 	}
 
 	draw(ctx, bass) {
+		if (this.max == undefined) {
+			return;
+		}
+		bass = bass / 300
+		if (bass < 1) {
+			bass = 1
+		}
 		this.memory.push(bass)
-		this.particles.forEach(row => {
-			row.forEach(particle => {
+		for (let i = 0; i < this.particles.length; i++) {
+			const row = this.particles[i];
+			for (let j = 0; j < row.length; j++) {
+				const particle = row[j];
+				let x_distance = particle.x - (this.max.x / 2) * this.particle_size;
+				let y_distance = particle.y - (this.max.y / 2) * this.particle_size;
+				let bass = this.memory.get(
+					Math.round((
+						Math.sqrt(Math.pow(Math.abs(x_distance / this.particle_size), 2) 
+						+ Math.pow(Math.abs(y_distance / this.particle_size), 2))
+						) / this.velocity)
+				);
+				let x = this.middle.x + Math.round(x_distance * bass);
+				let y = this.middle.y + Math.round(y_distance * bass);
 				ctx.fillStyle = particle.color;
-				x = Math.round()
-				ctx.fillRect(this.x + particle.x, this.y + particle.y, 1, 1);
-			});
-		});
+				ctx.beginPath();
+				ctx.arc(x, y, this.particle_size, 2 * Math.PI, false);
+				ctx.fill();
+			}
+		}
 	}
 }
 
@@ -106,7 +144,7 @@ class Visualizer {
 		this.interval = 1000 / controller["fps"];
 		this.delta;
 
-		this.particle_system = new ParticleSystem();
+		this.particle_system = new ParticleSystem(canvas.width / 2, canvas.height / 2);
 	}
 
 	start () {
@@ -129,7 +167,6 @@ class Visualizer {
 		this.analyser.connect(context.destination);
 		this.ctx = canvas.getContext("2d");
 		setGradients();
-		this.set_image_data();
 		this.lopper();
 	}
 
@@ -198,9 +235,10 @@ class Visualizer {
 		this.animate_circle_all(radius_circle_all);
 		this.animate_circle_bass(radius_circle_bass);
 		this.animate_text(radius_circle_bass / 4);
+		this.particle_system.draw(this.ctx, radius_circle_bass);
 	}
 }
 
 
-let visualizer = new Visualizer()
-visualizer.start()
+let visualizer = new Visualizer();
+visualizer.start();
